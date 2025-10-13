@@ -1,12 +1,14 @@
 package ch.unil.doplab;
 
-    /**
+import java.util.UUID;
+
+/**
      * Représente un utilisateur de l'application JobFinder.
      */
-    public class user {
+    public class User {
 
         // === Attributs ===
-        private int id;
+        private UUID id;
         private String username;   // unique
         private String password;
         private String firstName;
@@ -14,7 +16,7 @@ package ch.unil.doplab;
         private String email;
 
         // === Constructeur ===
-        public user(int id, String username, String password, String firstName, String lastName, String email) {
+        public User(UUID id, String username, String password, String firstName, String lastName, String email) {
             this.id = id;
             this.username = username;
             this.password = password;
@@ -22,6 +24,14 @@ package ch.unil.doplab;
             this.lastName = lastName;
             this.email = email;
         }
+    public User(String username, String password, String firstName, String lastName, String email) {
+        this.id = null;
+        this.username = username;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+    }
 
         // === Méthodes ===
         public void register() {
@@ -35,5 +45,6 @@ package ch.unil.doplab;
         public void logout() {
             System.out.println(username + " s'est déconnecté.");
         }
+
     }
 
