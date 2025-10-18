@@ -7,8 +7,17 @@ public class Employer extends User{
     private String enterpriseName;
  //   private String applicantId;
 
+    public Employer() { }
+
     public Employer(UUID id, String username, String password, String firstName, String lastName, String email, String enterpriseName) {
         super(id, username, password, firstName, lastName, email);
+        this.enterpriseName = enterpriseName;
+    }
+
+    public Employer(String username, String password,
+                    String firstName, String lastName, String email,
+                    String enterpriseName) {
+        super(username, password, firstName, lastName, email);
         this.enterpriseName = enterpriseName;
     }
 
@@ -18,6 +27,10 @@ public class Employer extends User{
  //       super(null, username, password, firstName, lastName, email);
   //      this.enterpriseName = enterpriseName;
  //   }
+
+    // --- Getters / Setters ---
+    public String getEnterpriseName() { return enterpriseName; }
+    public void setEnterpriseName(String enterpriseName) { this.enterpriseName = enterpriseName; }
 
     @Override
     public void register() {
@@ -36,7 +49,7 @@ public class Employer extends User{
 
     @Override
     public String toString() {
-        return super.toString() + "employer";
+        return "Employer{username=%s, enterpriseName=%s}".formatted(getUsername(), enterpriseName);
     }
 
 }
