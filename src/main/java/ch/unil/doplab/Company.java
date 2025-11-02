@@ -11,7 +11,7 @@ public class Company {
 
     private Company() {}
 
-    private Company(UUID id, UUID ownerEmployerId, String name, String address, String description) {
+    private Company(UUID id, UUID ownerEmployerId, String name, String location, String description) {
         this.id = id;
         this.ownerEmployerId = ownerEmployerId;
         this.name = name;

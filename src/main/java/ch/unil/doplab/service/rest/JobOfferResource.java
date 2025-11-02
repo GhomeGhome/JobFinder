@@ -4,8 +4,9 @@ import ch.unil.doplab.JobOffer;
 import ch.unil.doplab.service.domain.ApplicationState;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.*;
 
+import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -18,8 +19,12 @@ public class JobOfferResource {
     private ApplicationState state;
 
     @GET
-    public List<JobOffer> all() {
-        return new ArrayList<>(state.getAllOffers().values());
+    public List<JobOffer> all(@QueryParam("employerId") UUID employerId) {
+        var values = state.getAllOffers().values();
+        if (employerId == null) return new ArrayList<>(values);
+        return values.stream()
+                .filter(o -> employerId.equals(o.getEmployerId()))
+                .collect(Collectors.toList());
     }
 
     @GET
@@ -30,33 +35,34 @@ public class JobOfferResource {
         return o;
     }
 
-    @GET
-    @Path("/by-employer/{employerId}")
-    public List<JobOffer> byEmployer(@PathParam("employerId") UUID employerId) {
-        return state.getAllOffers().values().stream()
-                .filter(o -> employerId.equals(o.getEmployerId()))
-                .collect(Collectors.toList());
-    }
-
     @POST
-    public JobOffer add(JobOffer offer) {
-        // id is assigned by ApplicationState when missing
-        return state.addOffer(offer);
+    public Response add(JobOffer offer, @Context UriInfo uri) {
+        // ApplicationState assigns id, status/createdAt defaults, and validates employerId
+        JobOffer created = state.addOffer(offer);
+        URI location = uri.getAbsolutePathBuilder().path(created.getId().toString()).build();
+        return Response.created(location).entity(created).build(); // 201 + Location
     }
 
     @PUT
     @Path("/{id}")
-    public boolean update(@PathParam("id") UUID id, JobOffer offer) {
-        return state.setOffer(id, offer);
+    public JobOffer update(@PathParam("id") UUID id, JobOffer offer) {
+        boolean ok = state.setOffer(id, offer);
+        if (!ok) throw new NotFoundException();
+        // Return the updated entity
+        var updated = state.getOffer(id);
+        if (updated == null) throw new NotFoundException();
+        return updated;
     }
 
     @DELETE
     @Path("/{id}")
-    public boolean remove(@PathParam("id") UUID id) {
-        return state.removeOffer(id);
+    public Response remove(@PathParam("id") UUID id) {
+        boolean removed = state.removeOffer(id);
+        if (!removed) throw new NotFoundException();
+        return Response.noContent().build(); // 204
     }
 
-    // this is owner only so he can publish a draft
+    // Owner-only: publish a DRAFT offer
     @POST
     @Path("/{id}/publish/{employerId}")
     public JobOffer publish(@PathParam("id") UUID offerId,

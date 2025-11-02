@@ -2,6 +2,7 @@ package ch.unil.doplab.service.domain;
 
 import ch.unil.doplab.JobOffer;
 import ch.unil.doplab.JobOfferStatus;
+import ch.unil.doplab.Applicant;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -13,19 +14,24 @@ import java.util.UUID;
 @ApplicationScoped
 public class ApplicationState {
 
+    /* ===================== JOB OFFERS ===================== */
+
     private Map<UUID, JobOffer> offers;
-    // Minimal validation support: keep a small set of known employer IDs.
-    // (You can replace this with a real Employer map later.)
-    private Map<UUID, String> employers; // id -> display name (optional)
+    private Map<UUID, String> employers; // employerId -> display name (optional)
+
+    /* ===================== APPLICANTS ===================== */
+
+    private Map<UUID, Applicant> applicants;
 
     @PostConstruct
     public void init() {
         offers = new TreeMap<>();
         employers = new TreeMap<>();
+        applicants = new TreeMap<>();
         seed();
     }
 
-    /* ===================== JOB OFFERS ===================== */
+    /* ===================== JOB OFFERS API ===================== */
 
     public JobOffer addOffer(JobOffer offer) {
         if (offer.getId() != null) {
@@ -41,7 +47,6 @@ public class ApplicationState {
         if (!employers.containsKey(offer.getEmployerId())) {
             throw new IllegalArgumentException("Unknown employerId: " + offer.getEmployerId());
         }
-        // Defaults
         if (offer.getStatus() == null) {
             offer.setStatus(JobOfferStatus.Draft);
         }
@@ -57,7 +62,6 @@ public class ApplicationState {
         var current = offers.get(id);
         if (current == null) return false;
 
-        // If employerId changes, still validate it
         if (updated.getEmployerId() == null) {
             throw new IllegalArgumentException("JobOffer must have an employerId");
         }
@@ -66,11 +70,9 @@ public class ApplicationState {
         }
 
         updated.setId(id);
-        // Keep createdAt if not provided
         if (updated.getCreatedAt() == null) {
             updated.setCreatedAt(current.getCreatedAt());
         }
-        // Keep status if not provided
         if (updated.getStatus() == null) {
             updated.setStatus(current.getStatus());
         }
@@ -78,23 +80,13 @@ public class ApplicationState {
         return true;
     }
 
-    public boolean removeOffer(UUID id) {
-        return offers.remove(id) != null;
-    }
-
-    public JobOffer getOffer(UUID id) {
-        return offers.get(id);
-    }
-
-    public Map<UUID, JobOffer> getAllOffers() {
-        return offers;
-    }
+    public boolean removeOffer(UUID id) { return offers.remove(id) != null; }
+    public JobOffer getOffer(UUID id) { return offers.get(id); }
+    public Map<UUID, JobOffer> getAllOffers() { return offers; }
 
     public JobOffer publishOffer(UUID offerId, UUID employerId) {
         var offer = offers.get(offerId);
-        if (offer == null) {
-            throw new IllegalArgumentException("Offer not found");
-        }
+        if (offer == null) throw new IllegalArgumentException("Offer not found");
         if (!offer.getEmployerId().equals(employerId)) {
             throw new IllegalArgumentException("Only the offer owner can publish this offer");
         }
@@ -105,22 +97,53 @@ public class ApplicationState {
         return offer;
     }
 
+    /* ===================== APPLICANTS API ===================== */
+
+    public Applicant addApplicant(Applicant applicant) {
+        if (applicant.getId() == null) {
+            applicant.setId(UUID.randomUUID());
+        }
+        applicants.put(applicant.getId(), applicant);
+        return applicant;
+    }
+
+    public boolean setApplicant(UUID id, Applicant updated) {
+        var current = applicants.get(id);
+        if (current == null) return false;
+
+        updated.setId(id);
+        applicants.put(id, updated);
+        return true;
+    }
+
+    public boolean removeApplicant(UUID id) { return applicants.remove(id) != null; }
+    public Applicant getApplicant(UUID id) { return applicants.get(id); }
+    public Map<UUID, Applicant> getAllApplicants() { return applicants; }
+
     /* ===================== SEED DATA ===================== */
 
     private void seed() {
-        // Seed one employer so validation passes
+        // Employers
         var annaEmployerId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         employers.put(annaEmployerId, "Anna Employer");
 
-        // Seed one offer (DRAFT → then publish for quick testing)
+        // One seeded offer (DRAFT -> PUBLISHED)
         var offerId = UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd");
         var offer = new JobOffer(annaEmployerId, "Junior Java Developer");
         offer.setDescription("Build REST services with Jakarta EE.");
         offer.setEmploymentType("Full-time");
         offer.setCreatedAt(LocalDateTime.now());
         addOffer(offerId, offer);
-
-        // Make it visible
         publishOffer(offerId, annaEmployerId);
+
+        // Applicants
+        var a1 = new Applicant("alice","secret","Alice","Martin",
+                "alice@example.com","+41 79 111 22 33","Junior Java dev");
+        a1.setCvInfo("https://example.com/cv/alice.pdf");
+        addApplicant(a1);
+
+        var a2 = new Applicant("bob","secret","Bob","Keller",
+                "bob@example.com","@bob-on-telegram", null);
+        addApplicant(a2);
     }
 }

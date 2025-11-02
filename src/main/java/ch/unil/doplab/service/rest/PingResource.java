@@ -7,5 +7,5 @@ import jakarta.ws.rs.Path;
 @ApplicationScoped
 @Path("/ping")
 public class PingResource {
-    @GET public String ping() {return "ponggg";}
+    @GET public String ping() {return "is it working? yes ";}
 }

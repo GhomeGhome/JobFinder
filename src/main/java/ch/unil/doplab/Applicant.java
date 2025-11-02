@@ -8,7 +8,7 @@ public class Applicant extends User{
   //  private String location;
   //  private String bonusInfo;
     private String descriptionInfo;
-    private URL cvInfo ; // maybe change this to String instead of URL
+    private String cvInfo ; // maybe change this to String instead of URL
 
     public Applicant() { }
 
@@ -45,8 +45,8 @@ public class Applicant extends User{
     public String getDescriptionInfo() { return descriptionInfo; }
     public void setDescriptionInfo(String descriptionInfo) { this.descriptionInfo = descriptionInfo; }
 
-    public URL getCvInfo() { return cvInfo; }
-    public void setCvInfo(URL cvInfo) { this.cvInfo = cvInfo; }
+    public String getCvInfo() { return cvInfo; }
+    public void setCvInfo(String cvInfo) { this.cvInfo = cvInfo; }
 
     // === Méthodes ===
     @Override
