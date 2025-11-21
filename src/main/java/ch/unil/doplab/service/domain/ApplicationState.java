@@ -1,0 +1,252 @@
+package ch.unil.doplab.service.domain;
+
+import ch.unil.doplab.*;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import java.time.LocalDateTime;
+import java.util.*;
+
+/**
+ * ApplicationState est le "stockage mémoire" central de JobFinder.
+ * Il gère toutes les entités : Employers, Applicants, Companies,
+ * JobOffers, Applications.
+ */
+@ApplicationScoped
+public class ApplicationState {
+
+    // ======================================================
+    // STOCKAGE DES ENTITÉS
+    // ======================================================
+
+    private final Map<UUID, Employer> employers = new HashMap<>();
+    private final Map<UUID, Applicant> applicants = new HashMap<>();
+    private final Map<UUID, Company> companies = new HashMap<>();
+    private final Map<UUID, JobOffer> jobOffers = new HashMap<>();
+    private final Map<UUID, Application> applications = new HashMap<>();
+
+
+    // ======================================================
+    // GETTERS
+    // ======================================================
+
+    public Map<UUID, Employer> getAllEmployers() { return employers; }
+    public Map<UUID, Applicant> getAllApplicants() { return applicants; }
+    public Map<UUID, Company> getAllCompanies() { return companies; }
+    public Map<UUID, JobOffer> getAllOffers() { return jobOffers; }
+    public Map<UUID, Application> getAllApplications() { return applications; }
+
+    public Employer getEmployer(UUID id) { return employers.get(id); }
+    public Applicant getApplicant(UUID id) { return applicants.get(id); }
+    public Company getCompany(UUID id) { return companies.get(id); }
+    public JobOffer getOffer(UUID id) { return jobOffers.get(id); }
+    public Application getApplication(UUID id) { return applications.get(id); }
+
+
+    // ======================================================
+    // EMPLOYERS
+    // ======================================================
+
+    public Employer addEmployer(Employer e) {
+        if (e == null) throw new IllegalArgumentException("Employer cannot be null.");
+
+        UUID id = e.getId() != null ? e.getId() : UUID.randomUUID();
+        e.setId(id);
+
+        employers.put(id, e);
+
+        // Lier à sa Company si c'est spécifié
+        if (e.getCompanyId() != null) {
+            Company c = companies.get(e.getCompanyId());
+            if (c != null) c.addEmployerId(id);
+        }
+
+        return e;
+    }
+
+
+    // ======================================================
+    // APPLICANTS
+    // ======================================================
+
+    public Applicant addApplicant(Applicant a) {
+        if (a == null) throw new IllegalArgumentException("Applicant cannot be null.");
+
+        UUID id = a.getId() != null ? a.getId() : UUID.randomUUID();
+        a.setId(id);
+
+        applicants.put(id, a);
+        return a;
+    }
+
+
+    // ======================================================
+    // COMPANIES
+    // ======================================================
+
+    public Company addCompany(Company c) {
+        if (c == null) throw new IllegalArgumentException("Company cannot be null.");
+
+        UUID id = c.getId() != null ? c.getId() : UUID.randomUUID();
+        c.setId(id);
+
+        companies.put(id, c);
+
+        // Ajouter l'owner employer dans la liste
+        if (c.getOwnerEmployerId() != null) {
+            Employer owner = employers.get(c.getOwnerEmployerId());
+            if (owner != null) owner.setCompanyId(id);
+            c.addEmployerId(c.getOwnerEmployerId());
+        }
+
+        return c;
+    }
+
+
+    // ======================================================
+    // JOB OFFERS
+    // ======================================================
+
+    public JobOffer addOffer(JobOffer o) {
+        if (o == null) throw new IllegalArgumentException("JobOffer cannot be null.");
+        if (o.getEmployerId() == null) throw new IllegalArgumentException("JobOffer must have employerId");
+
+        UUID id = o.getId() != null ? o.getId() : UUID.randomUUID();
+        o.setId(id);
+
+        // Valeurs par défaut
+        if (o.getStatus() == null) o.setStatus(JobOfferStatus.Draft);
+        if (o.getCreatedAt() == null) o.setCreatedAt(LocalDateTime.now());
+
+        jobOffers.put(id, o);
+
+        // Lier à l'employer
+        Employer emp = employers.get(o.getEmployerId());
+        if (emp != null) emp.addJobOfferId(id);
+
+        // Lier à la company
+        if (o.getCompanyId() != null) {
+            Company c = companies.get(o.getCompanyId());
+            if (c != null) c.addJobOfferId(id);
+        }
+
+        return o;
+    }
+
+    public boolean setOffer(UUID id, JobOffer updated) {
+        JobOffer existing = jobOffers.get(id);
+        if (existing == null) return false;
+
+        updated.setId(id);
+        jobOffers.put(id, updated);
+        return true;
+    }
+
+    public boolean removeOffer(UUID id) {
+        JobOffer o = jobOffers.remove(id);
+        if (o == null) return false;
+
+        // Retirer des employeurs
+        Employer emp = employers.get(o.getEmployerId());
+        if (emp != null) emp.removeJobOfferId(id);
+
+        // Retirer des companies
+        Company c = companies.get(o.getCompanyId());
+        if (c != null) c.removeJobOfferId(id);
+
+        // Supprimer toutes les Applications associées
+        for (UUID appId : new ArrayList<>(o.getApplicationIds())) {
+            removeApplication(appId);
+        }
+
+        return true;
+    }
+
+    // === PUBLISH ===
+    public JobOffer publishOffer(UUID offerId, UUID employerId) {
+        JobOffer o = jobOffers.get(offerId);
+        if (o == null) throw new NoSuchElementException();
+
+        if (!employerId.equals(o.getEmployerId()))
+            throw new SecurityException("Employer cannot publish another employer's offer.");
+
+        o.setStatus(JobOfferStatus.Published);
+        return o;
+    }
+
+    // === CLOSE ===
+    public JobOffer closeOffer(UUID offerId, UUID employerId) {
+        JobOffer o = jobOffers.get(offerId);
+        if (o == null) throw new NoSuchElementException();
+
+        if (!employerId.equals(o.getEmployerId()))
+            throw new SecurityException("Employer cannot close another employer's offer.");
+
+        o.setStatus(JobOfferStatus.Closed);
+        return o;
+    }
+
+    // === REOPEN ===
+    public JobOffer reopenOffer(UUID offerId, UUID employerId) {
+        JobOffer o = jobOffers.get(offerId);
+        if (o == null) throw new NoSuchElementException();
+
+        if (!employerId.equals(o.getEmployerId()))
+            throw new SecurityException("Employer cannot reopen another employer's offer.");
+
+        o.setStatus(JobOfferStatus.Reopened);
+        return o;
+    }
+
+
+    // ======================================================
+    // APPLICATIONS
+    // ======================================================
+
+    public Application addApplication(Application app) {
+        if (app == null) throw new IllegalArgumentException("Application cannot be null.");
+
+        UUID id = app.getId() != null ? app.getId() : UUID.randomUUID();
+        app.setId(id);
+
+        // Valeurs par défaut
+        if (app.getStatus() == null) app.setStatus(ApplicationStatus.Submitted);
+        if (app.getSubmittedAt() == null) app.setSubmittedAt(LocalDateTime.now());
+        if (app.getUpdatedAt() == null) app.setUpdatedAt(app.getSubmittedAt());
+
+        applications.put(id, app);
+
+        // Lier au JobOffer
+        JobOffer offer = jobOffers.get(app.getJobOfferId());
+        if (offer != null) offer.addApplicationId(id);
+
+        // Lier à l'Applicant
+        Applicant applicant = applicants.get(app.getApplicantId());
+        if (applicant != null) applicant.addApplicationId(id);
+
+        return app;
+    }
+
+    public boolean removeApplication(UUID id) {
+        Application a = applications.remove(id);
+        if (a == null) return false;
+
+        // Retirer du JobOffer
+        JobOffer o = jobOffers.get(a.getJobOfferId());
+        if (o != null) o.removeApplicationId(id);
+
+        // Retirer de l'Applicant
+        Applicant ap = applicants.get(a.getApplicantId());
+        if (ap != null) ap.removeApplicationId(id);
+
+        return true;
+    }
+
+    public Application updateApplicationStatus(UUID id, ApplicationStatus status) {
+        Application a = applications.get(id);
+        if (a == null) throw new NoSuchElementException();
+
+        a.setStatus(status);
+        a.setUpdatedAt(LocalDateTime.now());
+        return a;
+    }
+}
