@@ -3,8 +3,10 @@ package ch.unil.doplab.service.domain;
 import ch.unil.doplab.*;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.*;
+
 
 /**
  * ApplicationState est le "stockage mémoire" central de JobFinder.
@@ -23,6 +25,83 @@ public class ApplicationState {
     private final Map<UUID, Company> companies = new HashMap<>();
     private final Map<UUID, JobOffer> jobOffers = new HashMap<>();
     private final Map<UUID, Application> applications = new HashMap<>();
+
+    @PostConstruct
+    private void seedDemoData() {
+        // ===== EMPLOYERS =====
+        Employer emp1 = new Employer();
+        emp1.setName("Alice", "Martin");              // adjust to your field names
+        emp1.setEmail("alice@example.com");       // e.g. setEmail if exists
+        addEmployer(emp1);
+
+        Employer emp2 = new Employer();
+        emp2.setName("Bob", "Dupont");
+        emp2.setEmail("bob@example.com");
+        addEmployer(emp2);
+
+        Employer emp3 = new Employer();
+        emp3.setName("Carla", "Rossi");
+        emp3.setEmail("carla@example.com");
+        addEmployer(emp3);
+
+        // ===== COMPANIES (owned by employers) =====
+        Company c1 = new Company();
+        c1.setName("Acme SA");                    // adjust fields
+        c1.setDescription("General tech company");
+        c1.setOwnerEmployerId(emp1.getId());      // addCompany() will also link employer->company
+        addCompany(c1);
+
+        Company c2 = new Company();
+        c2.setName("DataWorks GmbH");
+        c2.setDescription("Data consulting");
+        c2.setOwnerEmployerId(emp2.getId());
+        addCompany(c2);
+
+        Company c3 = new Company();
+        c3.setName("GreenFuture AG");
+        c3.setDescription("Sustainability solutions");
+        c3.setOwnerEmployerId(emp3.getId());
+        addCompany(c3);
+
+        // ===== APPLICANTS =====
+        Applicant a1 = new Applicant();
+        a1.setName("Igor", "Test");                  // adjust field names (e.g. setFirstName/setLastName)
+        a1.setEmail("igor.applicant1@example.com");
+        addApplicant(a1);
+
+        Applicant a2 = new Applicant();
+        a2.setName("Sara", "Applicant");
+        a2.setEmail("sara@example.com");
+        addApplicant(a2);
+
+        Applicant a3 = new Applicant();
+        a3.setName("Tom", "Candidate");
+        a3.setEmail("tom@example.com");
+        addApplicant(a3);
+
+        // ===== JOB OFFERS =====
+        JobOffer o1 = new JobOffer();
+        o1.setTitle("Junior Java Developer");     // adjust to your fields
+        o1.setDescription("Work on backend services in Java.");
+        o1.setEmployerId(emp1.getId());
+        o1.setCompanyId(c1.getId());
+        addOffer(o1);                             // will link to employer and company
+
+        JobOffer o2 = new JobOffer();
+        o2.setTitle("Data Analyst Intern");
+        o2.setDescription("Help analyse job market data.");
+        o2.setEmployerId(emp2.getId());
+        o2.setCompanyId(c2.getId());
+        addOffer(o2);
+
+        JobOffer o3 = new JobOffer();
+        o3.setTitle("DevOps Engineer");
+        o3.setDescription("Maintain CI/CD and deployment pipelines.");
+        o3.setEmployerId(emp3.getId());
+        o3.setCompanyId(c3.getId());
+        addOffer(o3);
+    }
+
 
 
     // ======================================================

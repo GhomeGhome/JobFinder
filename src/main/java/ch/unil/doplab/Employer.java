@@ -56,4 +56,9 @@ public class Employer extends User {
         return "Employer{username=%s, enterpriseName=%s, companyId=%s}"
                 .formatted(getUsername(), enterpriseName, companyId);
     }
+
+    @Override
+    public void setName(String first_name, String last_name){
+        super.setName(first_name, last_name);
+    }
 }

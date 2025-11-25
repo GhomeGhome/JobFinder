@@ -149,4 +149,9 @@ public abstract class User {
     public int hashCode() {
         return Objects.hashCode(id);
     }
+
+    public void setName(String first_name, String last_name){
+        firstName = first_name;
+        lastName = last_name;
+    }
 }

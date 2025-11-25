@@ -60,6 +60,11 @@ public class Applicant extends User {
         this.skills = (skills != null) ? skills : new ArrayList<>();
     }
 
+    @Override
+    public void setName(String firstName, String lastName) {
+        super.setName(firstName, lastName);
+    }
+
 
     // ======================================================
     // MÉTHODES UTILITAIRES
@@ -84,5 +89,6 @@ public class Applicant extends User {
         return "Applicant{username=%s, contactInfo=%s, skills=%s}"
                 .formatted(getUsername(), contactInfo, skills);
     }
+
 }
 
