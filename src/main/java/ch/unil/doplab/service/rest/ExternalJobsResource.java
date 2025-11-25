@@ -42,14 +42,12 @@ public class ExternalJobsResource {
             var jsonb = JsonbBuilder.create();
             List<Map<String,Object>> arr = jsonb.fromJson(res.body(), List.class);
 
-            // The first element is metadata → remove it
             if (!arr.isEmpty() && arr.get(0).containsKey("legal")) {
                 arr = arr.subList(1, arr.size());
             }
 
             String q = (keyword == null ? "" : keyword.trim().toLowerCase());
             limit = Math.max(1, Math.min(limit, 50)); // safe cap
-
             List<Map<String,Object>> out = new ArrayList<>();
 
             for (var it : arr) {
