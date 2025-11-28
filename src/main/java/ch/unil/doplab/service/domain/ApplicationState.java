@@ -100,6 +100,15 @@ public class ApplicationState {
         o3.setEmployerId(emp3.getId());
         o3.setCompanyId(c3.getId());
         addOffer(o3);
+
+        JobOffer o4 = new JobOffer();
+        o4.setTitle("Frontend Developer");
+        o4.setDescription("Build and style the JobFinder web UI.");
+        o4.setEmployerId(emp1.getId());      // or emp2 / emp3, as you like
+        o4.setCompanyId(c1.getId());         // Acme SA in your seed
+        // optional: if later you filter by status, you can publish it:
+        // o4.setStatus(JobOfferStatus.Published);
+        addOffer(o4);
     }
 
 

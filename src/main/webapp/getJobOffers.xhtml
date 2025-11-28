@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+<h:head>
+    <title>Published job offers</title>
+    <!-- this line is the important one -->
+    <h:outputStylesheet library="css" name="styles.css" />
+</h:head>
+
+<h:body>
+    <div class="app-container">
+        <h1 class="app-title">Published job offers</h1>
+
+        <h:form>
+            <h:dataTable value="#{jobOfferBean.allOffers}" var="offer"
+                         styleClass="job-table">
+
+                <h:column>
+                    <f:facet name="header">Title</f:facet>
+                    #{offer.title}
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Company</f:facet>
+                    #{jobOfferBean.companyName(offer)}
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Status</f:facet>
+                    <span class="status-badge">#{offer.status}</span>
+                </h:column>
+
+            </h:dataTable>
+        </h:form>
+    </div>
+</h:body>
+
+</html>
