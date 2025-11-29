@@ -64,3 +64,25 @@ body {
     background-color: #e5e7eb;
     color: #374151;
 }
+
+/* Navigation Bar */
+.nav-bar {
+    background-color: white;
+    padding: 15px 20px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.nav-links a {
+    text-decoration: none;
+    color: #4a5568;
+    margin-right: 20px;
+    font-weight: 500;
+}
+.nav-links a:hover { color: #2563eb; }
+.logout-btn {
+    background: none; border: none; color: #ef4444;
+    cursor: pointer; font-size: 14px; font-weight: 600;
+}

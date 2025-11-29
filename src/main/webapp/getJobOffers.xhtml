@@ -11,6 +11,17 @@
 </h:head>
 
 <h:body>
+    <div class="nav-bar">
+        <div class="nav-links">
+            <h:link value="Offers" outcome="getJobOffers" style="font-weight:bold; color:#2563eb;" />
+            <h:link value="Companies" outcome="companies" />
+            <h:link value="Employers" outcome="employers" />
+            <h:link value="Applicants" outcome="applicants" />
+            <h:link value="Applications" outcome="applications" />
+        </div>
+        <h:form style="margin:0;"><h:commandButton value="Logout" action="#{loginBean.logout}" styleClass="logout-btn" /></h:form>
+    </div>
+
     <div class="app-container">
         <h1 class="app-title">Published job offers</h1>
 

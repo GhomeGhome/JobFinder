@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<h:head>
+    <title>Employers</title>
+    <h:outputStylesheet library="css" name="styles.css" />
+</h:head>
+<h:body>
+    <div class="nav-bar">
+        <div class="nav-links">
+            <h:link value="Offers" outcome="getJobOffers" />
+            <h:link value="Companies" outcome="companies" style="font-weight:bold; color:#2563eb;" />
+            <h:link value="Employers" outcome="employers" />
+            <h:link value="Applicants" outcome="applicants" />
+            <h:link value="Applications" outcome="applications" />
+        </div>
+        <h:form style="margin:0;"><h:commandButton value="Logout" action="#{loginBean.logout}" styleClass="logout-btn" /></h:form>
+    </div>
+
+    <div class="app-container">
+        <h1 class="app-title">Companies</h1>
+        <h:dataTable value="#{companyBean.allCompanies}" var="c" styleClass="job-table">
+            <h:column><f:facet name="header">Name</f:facet>#{c.name}</h:column>
+            <h:column><f:facet name="header">Location</f:facet>#{c.location}</h:column>
+            <h:column><f:facet name="header">Description</f:facet>#{c.description}</h:column>
+        </h:dataTable>
+    </div>
+</h:body>
+</html>

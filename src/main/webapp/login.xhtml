@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html">
+<h:head>
+    <title>Login - JobFinder</title>
+    <h:outputStylesheet library="css" name="styles.css" />
+</h:head>
+<h:body>
+    <div style="max-width:300px; margin: 100px auto; text-align:center;">
+        <h1 class="app-title">JobFinder</h1>
+        <h:form>
+            <div style="margin-bottom:15px;">
+                <h:inputText value="#{loginBean.username}" placeholder="Username"
+                             style="width:100%; padding:10px;" />
+            </div>
+            <div style="margin-bottom:15px;">
+                <h:inputSecret value="#{loginBean.password}" placeholder="Password"
+                               style="width:100%; padding:10px;" />
+            </div>
+            <h:commandButton value="Login" action="#{loginBean.login}"
+                             style="width:100%; padding:10px; background:#2563eb; color:white; border:none;" />
+        </h:form>
+    </div>
+</h:body>
+</html>
