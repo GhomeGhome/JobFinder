@@ -39,4 +39,3 @@ public class JobOfferBean {
         return c.getName();
     }
 }
-
