@@ -20,3 +20,5 @@ public class ApplicantBean {
                 .collect(Collectors.toList());
     }
 }
+
+
