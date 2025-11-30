@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                template="/TEMPLATES/employerTemplate.xhtml">
+
+    <!-- This goes into <title> in the template -->
+    <ui:define name="title">
+        Applicants – JobFinder
+    </ui:define>
+
+    <!-- This goes into the page body inside .page-container -->
+    <ui:define name="content">
+
+        <div class="page-header">
+            <h1>Registered job seekers</h1>
+            <p class="page-subtitle">
+                View applicants and their skills.
+            </p>
+        </div>
+
+        <div class="card">
+            <h:dataTable value="#{applicantBean.allApplicants}"
+                         var="app"
+                         styleClass="job-table">
+
+                <h:column>
+                    <f:facet name="header">Name</f:facet>
+                    #{app.firstName} #{app.lastName}
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Contact</f:facet>
+                    #{app.contactInfo}
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Description</f:facet>
+                    #{app.descriptionInfo}
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Skills</f:facet>
+                    <ui:repeat value="#{app.skills}" var="skill">
+                        <span class="status-badge" style="margin-right:5px;">
+                            #{skill}
+                        </span>
+                    </ui:repeat>
+                </h:column>
+
+            </h:dataTable>
+        </div>
+
+    </ui:define>
+
+</ui:composition>

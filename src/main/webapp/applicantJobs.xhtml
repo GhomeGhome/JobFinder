@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                template="/TEMPLATES/applicantTemplate.xhtml">
+
+    <ui:define name="title">
+        Jobs – JobFinder
+    </ui:define>
+
+    <ui:define name="content">
+
+        <div class="page-header">
+            <h1>Browse job offers</h1>
+            <p class="page-subtitle">
+                Search and apply for open positions.
+            </p>
+        </div>
+
+        <div class="card">
+            <h:form>
+
+                <!-- keyword search -->
+                <div class="field">
+                    <span class="field-label">Search</span>
+                    <h:inputText value="#{jobOfferBean.searchKeyword}"
+                                 styleClass="input-full"
+                                 placeholder="Search by title, company or description" />
+                </div>
+
+                <!-- scrollable list -->
+                <div class="job-list-scroll">
+                    <h:dataTable value="#{jobOfferBean.filteredOffers}"
+                                 var="offer"
+                                 styleClass="job-table">
+
+                        <h:column>
+                            <f:facet name="header">Title</f:facet>
+                            #{offer.title}
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Company</f:facet>
+                            #{jobOfferBean.companyName(offer)}
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Location</f:facet>
+                            #{offer.location}
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Status</f:facet>
+                            <span class="status-badge">
+                                #{offer.status}
+                            </span>
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Actions</f:facet>
+                            <h:commandLink value="View / Apply"
+                                           action="#{jobOfferBean.viewOffer(offer.id)}" />
+                        </h:column>
+
+                    </h:dataTable>
+                </div>
+
+            </h:form>
+        </div>
+
+    </ui:define>
+
+</ui:composition>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<h:head>
+    <title>
+        <ui:insert name="title">Applicant – JobFinder</ui:insert>
+    </title>
+
+    <link rel="stylesheet"
+          type="text/css"
+          href="#{request.contextPath}/resources/css/styles.css" />
+</h:head>
+
+<h:body styleClass="page-bg">
+
+    <div class="top-bar">
+        <div class="top-bar-inner">
+
+            <!-- LEFT: logo + tabs -->
+            <div class="top-bar-left">
+                <span class="app-logo">JobFinder</span>
+                <div class="top-bar-section">
+                    <h:link outcome="/applicantJobs.xhtml"
+                            value="Jobs"
+                            styleClass="top-link #{view.viewId eq '/applicantJobs.xhtml' ? 'top-link-active' : ''}" />
+
+                    <h:link outcome="/applicantApplications.xhtml"
+                            value="My applications"
+                            styleClass="top-link #{view.viewId eq '/applicantApplications.xhtml' ? 'top-link-active' : ''}" />
+
+                    <h:link outcome="/applicantProfile.xhtml"
+                            value="Profile"
+                            styleClass="top-link #{view.viewId eq '/applicantProfile.xhtml' ? 'top-link-active' : ''}" />
+
+                    <h:link outcome="/applicantInterviews.xhtml"
+                            value="Interviews"
+                            styleClass="top-link #{view.viewId eq '/applicantInterviews.xhtml' ? 'top-link-active' : ''}" />
+                </div>
+            </div>
+
+            <!-- RIGHT: user chip + employer view + logout -->
+            <div class="top-bar-right">
+                <span class="user-chip">
+                    #{loginBean.loggedApplicant.firstName} · Applicant
+                </span>
+
+                <!-- Show employer view link only if user is also an employer -->
+                <h:link outcome="/employerDashboard.xhtml"
+                        value="Employer view"
+                        styleClass="top-link"
+                        rendered="#{loginBean.isEmployer()}" />
+
+                <h:form styleClass="top-bar-form">
+                    <h:commandButton value="Logout"
+                                     action="#{loginBean.logout}"
+                                     styleClass="btn btn-light" />
+                </h:form>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="page-container">
+        <ui:insert name="content" />
+    </div>
+
+</h:body>
+</html>

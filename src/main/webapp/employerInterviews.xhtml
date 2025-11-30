@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                template="/TEMPLATES/employerTemplate.xhtml">
+
+    <ui:define name="title">
+        Interviews – JobFinder
+    </ui:define>
+
+    <ui:define name="content">
+
+        <div class="page-header">
+            <h1>Interviews</h1>
+            <p class="page-subtitle">
+                Schedule and manage interviews for your job posts.
+            </p>
+        </div>
+
+        <h:messages styleClass="form-messages" />
+
+        <!-- Schedule new interview card -->
+        <div class="card" style="margin-bottom: 16px;">
+            <h:form>
+
+                <!-- Job post -->
+                <div class="field">
+                    <span class="field-label">Job post</span>
+                    <h:selectOneMenu value="#{interviewBean.selectedJobOfferId}"
+                                     styleClass="input-full">
+                        <f:selectItem itemValue="" itemLabel="Select job post"
+                                      noSelectionOption="true" />
+                        <f:selectItems value="#{jobOfferBean.employerOffers}"
+                                       var="job"
+                                       itemValue="#{job.id}"
+                                       itemLabel="#{job.title} - #{jobOfferBean.companyName(job)}" />
+                    </h:selectOneMenu>
+                </div>
+
+                <!-- Applicant -->
+                <div class="field">
+                    <span class="field-label">Applicant</span>
+                    <h:selectOneMenu value="#{interviewBean.selectedApplicantId}"
+                                     styleClass="input-full">
+                        <f:selectItem itemValue="" itemLabel="Select applicant"
+                                      noSelectionOption="true" />
+                        <!-- applicantsForSelectedJob should return only applicants who applied to selected job -->
+                        <f:selectItems value="#{interviewBean.applicantsForSelectedJob}"
+                                       var="app"
+                                       itemValue="#{app.id}"
+                                       itemLabel="#{app.firstName} #{app.lastName}" />
+                    </h:selectOneMenu>
+                </div>
+
+                <!-- Date & time -->
+                <div class="field">
+                    <span class="field-label">Date &amp; time</span>
+                    <!-- simple text input with DateTime converter; pattern can be whatever you like -->
+                    <h:inputText value="#{interviewBean.scheduledAt}"
+                                 styleClass="input-full">
+                        <f:convertDateTime pattern="yyyy-MM-dd HH:mm" />
+                    </h:inputText>
+                    <small style="font-size: 12px; color: #6b7280;">
+                        Format: 2025-12-01 14:30
+                    </small>
+                </div>
+
+                <!-- Mode (optional) -->
+                <div class="field">
+                    <span class="field-label">Mode</span>
+                    <h:selectOneMenu value="#{interviewBean.mode}"
+                                     styleClass="input-full">
+                        <f:selectItem itemValue="ONLINE" itemLabel="Online" />
+                        <f:selectItem itemValue="ONSITE" itemLabel="On-site" />
+                        <f:selectItem itemValue="PHONE" itemLabel="Phone" />
+                    </h:selectOneMenu>
+                </div>
+
+                <h:commandButton value="Schedule interview"
+                                 action="#{interviewBean.schedule}"
+                                 styleClass="btn btn-primary btn-full" />
+
+            </h:form>
+        </div>
+
+        <!-- Existing interviews table -->
+        <div class="card">
+            <h:dataTable value="#{interviewBean.employerInterviews}"
+                         var="iv"
+                         styleClass="job-table">
+
+                <h:column>
+                    <f:facet name="header">Candidate</f:facet>
+                    #{iv.applicantName}
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Job</f:facet>
+                    #{iv.jobTitle}
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Date &amp; time</f:facet>
+                    #{iv.scheduledAt}
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Mode</f:facet>
+                    #{iv.mode}
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Status</f:facet>
+                    <span class="status-badge">
+                        #{iv.status}
+                    </span>
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Actions</f:facet>
+                    <h:form>
+                        <h:commandLink value="View"
+                                       action="#{interviewBean.view(iv.id)}" />
+                        |
+                        <h:commandLink value="Reschedule"
+                                       action="#{interviewBean.reschedule(iv.id)}" />
+                        |
+                        <h:commandLink value="Cancel"
+                                       action="#{interviewBean.cancel(iv.id)}" />
+                    </h:form>
+                </h:column>
+
+            </h:dataTable>
+        </div>
+
+    </ui:define>
+
+</ui:composition>

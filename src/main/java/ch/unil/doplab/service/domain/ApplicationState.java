@@ -6,6 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -25,91 +26,335 @@ public class ApplicationState {
     private final Map<UUID, Company> companies = new HashMap<>();
     private final Map<UUID, JobOffer> jobOffers = new HashMap<>();
     private final Map<UUID, Application> applications = new HashMap<>();
+//    private Map<UUID, Interview> interviews = new LinkedHashMap<>();
 
     @PostConstruct
     private void seedDemoData() {
-        // ===== EMPLOYERS =====
-        Employer emp1 = new Employer();
-        emp1.setName("Alice", "Martin");              // adjust to your field names
-        emp1.setEmail("alice@example.com");       // e.g. setEmail if exists
-        addEmployer(emp1);
+        // Avoid reseeding if data already exists
+        if (!employers.isEmpty() || !companies.isEmpty() ||
+                !applicants.isEmpty() || !jobOffers.isEmpty() ||
+                !applications.isEmpty()) {
+            return;
+        }
 
-        Employer emp2 = new Employer();
-        emp2.setName("Bob", "Dupont");
-        emp2.setEmail("bob@example.com");
-        addEmployer(emp2);
+        // ========= EMPLOYERS =========
+        Employer alice = new Employer();
+        alice.setFirstName("Alice");
+        alice.setLastName("Martin");
+        alice.setEmail("alice@example.com");
+        alice.setUsername("alice");
+        alice.setPassword("alice123");
+        addEmployer(alice);
 
-        Employer emp3 = new Employer();
-        emp3.setName("Carla", "Rossi");
-        emp3.setEmail("carla@example.com");
-        addEmployer(emp3);
+        Employer bob = new Employer();
+        bob.setFirstName("Bob");
+        bob.setLastName("Dupont");
+        bob.setEmail("bob@example.com");
+        bob.setUsername("bob");
+        bob.setPassword("bob123");
+        addEmployer(bob);
 
-        // ===== COMPANIES (owned by employers) =====
-        Company c1 = new Company();
-        c1.setName("Acme SA");                    // adjust fields
-        c1.setDescription("General tech company");
-        c1.setOwnerEmployerId(emp1.getId());      // addCompany() will also link employer->company
-        addCompany(c1);
+        Employer carla = new Employer();
+        carla.setFirstName("Carla");
+        carla.setLastName("Rossi");
+        carla.setEmail("carla@example.com");
+        carla.setUsername("carla");
+        carla.setPassword("carla123");
+        addEmployer(carla);
 
-        Company c2 = new Company();
-        c2.setName("DataWorks GmbH");
-        c2.setDescription("Data consulting");
-        c2.setOwnerEmployerId(emp2.getId());
-        addCompany(c2);
+        Employer david = new Employer();
+        david.setFirstName("David");
+        david.setLastName("Nguyen");
+        david.setEmail("david@example.com");
+        david.setUsername("david");
+        david.setPassword("david123");
+        addEmployer(david);
 
-        Company c3 = new Company();
-        c3.setName("GreenFuture AG");
-        c3.setDescription("Sustainability solutions");
-        c3.setOwnerEmployerId(emp3.getId());
-        addCompany(c3);
+        // ========= COMPANIES =========
+        Company acme = new Company();
+        acme.setName("Acme SA");
+        acme.setDescription("General tech company");
+        acme.setLocation("Lausanne");
+        acme.setOwnerEmployerId(alice.getId());
+        addCompany(acme);
 
-        // ===== APPLICANTS =====
-        Applicant a1 = new Applicant();
-        a1.setName("Igor", "Test");                  // adjust field names (e.g. setFirstName/setLastName)
-        a1.setEmail("igor.applicant1@example.com");
-        addApplicant(a1);
+        Company dataWorks = new Company();
+        dataWorks.setName("DataWorks GmbH");
+        dataWorks.setDescription("Data consulting and analytics");
+        dataWorks.setLocation("Zurich");
+        dataWorks.setOwnerEmployerId(bob.getId());
+        addCompany(dataWorks);
 
-        Applicant a2 = new Applicant();
-        a2.setName("Sara", "Applicant");
-        a2.setEmail("sara@example.com");
-        addApplicant(a2);
+        Company greenFuture = new Company();
+        greenFuture.setName("GreenFuture AG");
+        greenFuture.setDescription("Sustainability solutions");
+        greenFuture.setLocation("Geneva");
+        greenFuture.setOwnerEmployerId(carla.getId());
+        addCompany(greenFuture);
 
-        Applicant a3 = new Applicant();
-        a3.setName("Tom", "Candidate");
-        a3.setEmail("tom@example.com");
-        addApplicant(a3);
+        Company finEdge = new Company();
+        finEdge.setName("FinEdge SA");
+        finEdge.setDescription("Fintech products and services");
+        finEdge.setLocation("Geneva");
+        finEdge.setOwnerEmployerId(bob.getId());
+        addCompany(finEdge);
 
-        // ===== JOB OFFERS =====
+        Company healthSync = new Company();
+        healthSync.setName("HealthSync SA");
+        healthSync.setDescription("Digital health & mHealth");
+        healthSync.setLocation("Lausanne");
+        healthSync.setOwnerEmployerId(david.getId());
+        addCompany(healthSync);
+
+        Company roboLabs = new Company();
+        roboLabs.setName("RoboLabs SARL");
+        roboLabs.setDescription("Robotics & automation");
+        roboLabs.setLocation("Bern");
+        roboLabs.setOwnerEmployerId(alice.getId());
+        addCompany(roboLabs);
+
+        // ========= APPLICANTS =========
+        Applicant igor = new Applicant();
+        igor.setFirstName("Igor");
+        igor.setLastName("Zolotarev");
+        igor.setEmail("igor.applicant@example.com");
+        igor.setUsername("igor");
+        igor.setPassword("igor123");
+        addApplicant(igor);
+
+        Applicant sara = new Applicant();
+        sara.setFirstName("Sara");
+        sara.setLastName("Novak");
+        sara.setEmail("sara@example.com");
+        sara.setUsername("sara");
+        sara.setPassword("sara123");
+        addApplicant(sara);
+
+        Applicant tom = new Applicant();
+        tom.setFirstName("Tom");
+        tom.setLastName("Candidate");
+        tom.setEmail("tom@example.com");
+        tom.setUsername("tom");
+        tom.setPassword("tom123");
+        addApplicant(tom);
+
+        Applicant emma = new Applicant();
+        emma.setFirstName("Emma");
+        emma.setLastName("Liu");
+        emma.setEmail("emma@example.com");
+        emma.setUsername("emma");
+        emma.setPassword("emma123");
+        addApplicant(emma);
+
+        Applicant marc = new Applicant();
+        marc.setFirstName("Marc");
+        marc.setLastName("Dubois");
+        marc.setEmail("marc@example.com");
+        marc.setUsername("marc");
+        marc.setPassword("marc123");
+        addApplicant(marc);
+
+        Applicant julia = new Applicant();
+        julia.setFirstName("Julia");
+        julia.setLastName("Rossi");
+        julia.setEmail("julia@example.com");
+        julia.setUsername("julia");
+        julia.setPassword("julia123");
+        addApplicant(julia);
+
+        Applicant nico = new Applicant();
+        nico.setFirstName("Nicolas");
+        nico.setLastName("Keller");
+        nico.setEmail("nicolas@example.com");
+        nico.setUsername("nicolas");
+        nico.setPassword("nico123");
+        addApplicant(nico);
+
+        Applicant lina = new Applicant();
+        lina.setFirstName("Lina");
+        lina.setLastName("Müller");
+        lina.setEmail("lina@example.com");
+        lina.setUsername("lina");
+        lina.setPassword("lina123");
+        addApplicant(lina);
+
+        Applicant omar = new Applicant();
+        omar.setFirstName("Omar");
+        omar.setLastName("Haddad");
+        omar.setEmail("omar@example.com");
+        omar.setUsername("omar");
+        omar.setPassword("omar123");
+        addApplicant(omar);
+
+        Applicant chloe = new Applicant();
+        chloe.setFirstName("Chloé");
+        chloe.setLastName("Morel");
+        chloe.setEmail("chloe@example.com");
+        chloe.setUsername("chloe");
+        chloe.setPassword("chloe123");
+        addApplicant(chloe);
+
+        // ========= JOB OFFERS =========
+        // Use your JobOfferStatus enum: adjust names if different (e.g. PUBLISHED/DRAFT/CLOSED)
         JobOffer o1 = new JobOffer();
-        o1.setTitle("Junior Java Developer");     // adjust to your fields
-        o1.setDescription("Work on backend services in Java.");
-        o1.setEmployerId(emp1.getId());
-        o1.setCompanyId(c1.getId());
-        addOffer(o1);                             // will link to employer and company
+        o1.setTitle("Junior Java Developer");
+        o1.setDescription("Work on backend services in Java for our web platform.");
+        o1.setEmployerId(alice.getId());
+        o1.setCompanyId(acme.getId());
+        o1.setStatus(JobOfferStatus.Published);
+        addOffer(o1);
 
         JobOffer o2 = new JobOffer();
         o2.setTitle("Data Analyst Intern");
-        o2.setDescription("Help analyse job market data.");
-        o2.setEmployerId(emp2.getId());
-        o2.setCompanyId(c2.getId());
+        o2.setDescription("Help analyse job market and platform usage data.");
+        o2.setEmployerId(bob.getId());
+        o2.setCompanyId(dataWorks.getId());
+        o2.setStatus(JobOfferStatus.Published);
         addOffer(o2);
 
         JobOffer o3 = new JobOffer();
         o3.setTitle("DevOps Engineer");
-        o3.setDescription("Maintain CI/CD and deployment pipelines.");
-        o3.setEmployerId(emp3.getId());
-        o3.setCompanyId(c3.getId());
+        o3.setDescription("Maintain CI/CD pipelines and cloud infrastructure.");
+        o3.setEmployerId(carla.getId());
+        o3.setCompanyId(greenFuture.getId());
+        o3.setStatus(JobOfferStatus.Draft);
         addOffer(o3);
 
         JobOffer o4 = new JobOffer();
         o4.setTitle("Frontend Developer");
         o4.setDescription("Build and style the JobFinder web UI.");
-        o4.setEmployerId(emp1.getId());      // or emp2 / emp3, as you like
-        o4.setCompanyId(c1.getId());         // Acme SA in your seed
-        // optional: if later you filter by status, you can publish it:
-        // o4.setStatus(JobOfferStatus.Published);
+        o4.setEmployerId(alice.getId());
+        o4.setCompanyId(acme.getId());
+        o4.setStatus(JobOfferStatus.Published);
         addOffer(o4);
+
+        JobOffer o5 = new JobOffer();
+        o5.setTitle("Machine Learning Engineer");
+        o5.setDescription("Develop matching and recommendation models.");
+        o5.setEmployerId(bob.getId());
+        o5.setCompanyId(dataWorks.getId());
+        o5.setStatus(JobOfferStatus.Closed);
+        addOffer(o5);
+
+        JobOffer o6 = new JobOffer();
+        o6.setTitle("Sustainability Consultant");
+        o6.setDescription("Advise clients on green transformation projects.");
+        o6.setEmployerId(carla.getId());
+        o6.setCompanyId(greenFuture.getId());
+        o6.setStatus(JobOfferStatus.Published);
+        addOffer(o6);
+
+        JobOffer o7 = new JobOffer();
+        o7.setTitle("Product Manager – Fintech");
+        o7.setDescription("Own product roadmap for a digital payment solution.");
+        o7.setEmployerId(bob.getId());
+        o7.setCompanyId(finEdge.getId());
+        o7.setStatus(JobOfferStatus.Published);
+        addOffer(o7);
+
+        JobOffer o8 = new JobOffer();
+        o8.setTitle("Mobile Developer (iOS/Android)");
+        o8.setDescription("Develop our health monitoring mobile app.");
+        o8.setEmployerId(david.getId());
+        o8.setCompanyId(healthSync.getId());
+        o8.setStatus(JobOfferStatus.Draft);
+        addOffer(o8);
+
+        JobOffer o9 = new JobOffer();
+        o9.setTitle("Robotics Engineer Intern");
+        o9.setDescription("Support development of warehouse robotics projects.");
+        o9.setEmployerId(alice.getId());
+        o9.setCompanyId(roboLabs.getId());
+        o9.setStatus(JobOfferStatus.Published);
+        addOffer(o9);
+
+        // ========= APPLICATIONS =========
+        // Adjust enum names if needed (SUBMITTED, IN_REVIEW, REJECTED, HIRED, ...)
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+        // Igor applies to Junior Java Dev (Alice / Acme)
+        Application a1App = new Application();
+        a1App.setJobOfferId(o1.getId());
+        a1App.setApplicantId(igor.getId());
+        a1App.setStatus(ApplicationStatus.Submitted);
+        a1App.setMatchScore(82.5);
+        a1App.setSubmittedAt(now.minusDays(5));
+        addApplication(a1App);
+
+        // Sara applies to Junior Java Dev – in review
+        Application a2App = new Application();
+        a2App.setJobOfferId(o1.getId());
+        a2App.setApplicantId(sara.getId());
+        a2App.setStatus(ApplicationStatus.In_review);
+        a2App.setMatchScore(74.0);
+        a2App.setSubmittedAt(now.minusDays(3));
+        addApplication(a2App);
+
+        // Marc applies to Frontend Dev (Alice / Acme)
+        Application a3App = new Application();
+        a3App.setJobOfferId(o4.getId());
+        a3App.setApplicantId(marc.getId());
+        a3App.setStatus(ApplicationStatus.Submitted);
+        a3App.setMatchScore(77.5);
+        a3App.setSubmittedAt(now.minusDays(1));
+        addApplication(a3App);
+
+        // Emma applies to Data Analyst Intern (Bob / DataWorks)
+        Application a4App = new Application();
+        a4App.setJobOfferId(o2.getId());
+        a4App.setApplicantId(emma.getId());
+        a4App.setStatus(ApplicationStatus.Submitted);
+        a4App.setMatchScore(88.0);
+        a4App.setSubmittedAt(now.minusDays(4));
+        addApplication(a4App);
+
+        // Tom applies to Machine Learning Engineer (closed offer)
+        Application a5App = new Application();
+        a5App.setJobOfferId(o5.getId());
+        a5App.setApplicantId(tom.getId());
+        a5App.setStatus(ApplicationStatus.Rejected);
+        a5App.setMatchScore(69.0);
+        a5App.setSubmittedAt(now.minusDays(10));
+        addApplication(a5App);
+
+        // Lina applies to Sustainability Consultant (Carla / GreenFuture)
+        Application a6App = new Application();
+        a6App.setJobOfferId(o6.getId());
+        a6App.setApplicantId(lina.getId());
+        a6App.setStatus(ApplicationStatus.Submitted);
+        a6App.setMatchScore(91.0);
+        a6App.setSubmittedAt(now.minusDays(2));
+        addApplication(a6App);
+
+        // Omar applies to Product Manager – Fintech
+        Application a7App = new Application();
+        a7App.setJobOfferId(o7.getId());
+        a7App.setApplicantId(omar.getId());
+        a7App.setStatus(ApplicationStatus.In_review);
+        a7App.setMatchScore(79.5);
+        a7App.setSubmittedAt(now.minusDays(7));
+        addApplication(a7App);
+
+        // Chloé applies to Mobile Dev (draft offer – demo edge case)
+        Application a8App = new Application();
+        a8App.setJobOfferId(o8.getId());
+        a8App.setApplicantId(chloe.getId());
+        a8App.setStatus(ApplicationStatus.Submitted);
+        a8App.setMatchScore(86.0);
+        a8App.setSubmittedAt(now.minusDays(1));
+        addApplication(a8App);
+
+        // Nico applies to Robotics Engineer Intern
+        Application a9App = new Application();
+        a9App.setJobOfferId(o9.getId());
+        a9App.setApplicantId(nico.getId());
+        a9App.setStatus(ApplicationStatus.Submitted);
+        a9App.setMatchScore(80.0);
+        a9App.setSubmittedAt(now.minusDays(6));
+        addApplication(a9App);
     }
+
 
 
 
@@ -337,4 +582,22 @@ public class ApplicationState {
         a.setUpdatedAt(LocalDateTime.now());
         return a;
     }
+
+    // ======================================================
+    // INTERVIEWS
+    // ======================================================
+
+//    public Map<UUID, Interview> getAllInterviews() {
+//        return interviews;
+//    }
+//
+//    public void addInterview(Interview interview) {
+//        interviews.put(interview.getId(), interview);
+//    }
+//
+//    public List<Interview> getInterviewsForEmployer(UUID employerId) {
+//        return interviews.values().stream()
+//                .filter(i -> employerId.equals(i.getEmployerId()))
+//                .collect(Collectors.toList());
+//    }
 }

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+<h:head>
+    <title>Applicant dashboard</title>
+    <link rel="stylesheet" type="text/css" href="/jobfinder/resources/css/styles.css" />
+</h:head>
+
+<h:body class="page-bg">
+
+    <!-- Not logged in -->
+    <h:panelGroup rendered="#{!loginBean.loggedIn}">
+        <div class="page-container">
+            <div class="page-header">
+                <h1>Please log in</h1>
+                <p class="page-subtitle">
+                    Your session has expired or you are not logged in.
+                </p>
+                <h:link outcome="login" value="Go to login page" styleClass="btn btn-primary" />
+            </div>
+        </div>
+    </h:panelGroup>
+
+    <!-- Logged in applicant -->
+    <h:panelGroup rendered="#{loginBean.loggedIn}">
+
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div class="top-bar-inner">
+                <div class="top-bar-left">
+                    <span class="app-logo">JobFinder</span>
+                    <span class="top-bar-section">
+                    <!-- Applicant links -->
+                        <h:link outcome="applicantDashboard" value="Browse offers"
+                                styleClass="top-link"
+                                rendered="#{loginBean.isApplicant()}" />
+                    <h:link outcome="applicantApplications" value="My applications"
+                            styleClass="top-link"
+                            rendered="#{loginBean.isApplicant()}" />
+
+                        <!-- Employer links -->
+                        <h:link outcome="employerDashboard" value="Offers"
+                                styleClass="top-link"
+                                rendered="#{loginBean.isEmployer()}" />
+                    <h:link outcome="companies" value="Companies"
+                            styleClass="top-link"
+                            rendered="#{loginBean.isEmployer()}" />
+                    <h:link outcome="applicants" value="Applicants"
+                            styleClass="top-link"
+                            rendered="#{loginBean.isEmployer()}" />
+                    <h:link outcome="applications" value="Applications"
+                            styleClass="top-link"
+                            rendered="#{loginBean.isEmployer()}" />
+                </span>
+                </div>
+
+                <div class="top-bar-right">
+                <span class="user-chip" rendered="#{loginBean.isApplicant()}">
+                    #{loginBean.loggedApplicant.firstName} (Applicant)
+                </span>
+                    <span class="user-chip" rendered="#{loginBean.isEmployer()}">
+                    #{loginBean.loggedEmployer.firstName} (Employer)
+                </span>
+
+                    <h:form>
+                        <h:commandButton value="Logout"
+                                         action="#{loginBean.logout}"
+                                         styleClass="btn btn-light" />
+                    </h:form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="page-container">
+            <div class="page-header">
+                <h1>Hi, #{loginBean.loggedApplicant.firstName} – available job offers</h1>
+                <p class="page-subtitle">
+                    Browse open positions and apply in one click.
+                </p>
+            </div>
+
+            <div class="card">
+                <h:form>
+                    <h:dataTable value="#{jobOfferBean.allOffers}" var="offer"
+                                 styleClass="job-table">
+
+                        <h:column>
+                            <f:facet name="header">Title</f:facet>
+                            #{offer.title}
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Company</f:facet>
+                            #{jobOfferBean.companyName(offer)}
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Status</f:facet>
+                            <span class="status-badge">#{offer.status}</span>
+                        </h:column>
+
+                    </h:dataTable>
+                </h:form>
+            </div>
+        </div>
+    </h:panelGroup>
+
+</h:body>
+</html>

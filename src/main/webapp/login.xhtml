@@ -1,25 +1,51 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://xmlns.jcp.org/jsf/html">
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
 <h:head>
     <title>Login - JobFinder</title>
-    <h:outputStylesheet library="css" name="styles.css" />
+<!--    <h:outputStylesheet library="css" name="styles.css" />-->
+    <link rel="stylesheet" type="text/css" href="/jobfinder/resources/css/styles.css" />
 </h:head>
-<h:body>
-    <div style="max-width:300px; margin: 100px auto; text-align:center;">
-        <h1 class="app-title">JobFinder</h1>
-        <h:form>
-            <div style="margin-bottom:15px;">
-                <h:inputText value="#{loginBean.username}" placeholder="Username"
-                             style="width:100%; padding:10px;" />
-            </div>
-            <div style="margin-bottom:15px;">
-                <h:inputSecret value="#{loginBean.password}" placeholder="Password"
-                               style="width:100%; padding:10px;" />
-            </div>
-            <h:commandButton value="Login" action="#{loginBean.login}"
-                             style="width:100%; padding:10px; background:#2563eb; color:white; border:none;" />
-        </h:form>
+<h:body class="page-bg">
+    <div class="center-wrapper">
+        <div class="card login-card">
+            <h1 class="app-title">JobFinder</h1>
+            <p class="app-subtitle">Sign in as applicant or employer</p>
+
+            <h:form>
+                <h:messages styleClass="form-messages" />
+
+                <!-- Role toggle -->
+                <div class="field">
+                    <span class="field-label">Login as</span>
+                    <h:selectOneRadio value="#{loginBean.role}" styleClass="role-radio">
+                        <f:selectItem itemValue="APPLICANT" itemLabel="Applicant" />
+                        <f:selectItem itemValue="EMPLOYER" itemLabel="Employer" />
+                    </h:selectOneRadio>
+                </div>
+
+                <!-- Username -->
+                <div class="field">
+                    <span class="field-label">Username</span>
+                    <h:inputText value="#{loginBean.username}"
+                                 styleClass="input-full"
+                                 required="true" />
+                </div>
+
+                <!-- Password -->
+                <div class="field">
+                    <span class="field-label">Password</span>
+                    <h:inputSecret value="#{loginBean.password}"
+                                   styleClass="input-full"
+                                   required="true" />
+                </div>
+
+                <h:commandButton value="Log in"
+                                 action="#{loginBean.login}"
+                                 styleClass="btn btn-primary btn-full" />
+            </h:form>
+        </div>
     </div>
 </h:body>
 </html>

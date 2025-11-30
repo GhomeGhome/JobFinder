@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                template="/TEMPLATES/employerTemplate.xhtml">
+
+    <ui:define name="title">
+        Applications – JobFinder
+    </ui:define>
+
+    <ui:define name="content">
+
+        <div class="page-header">
+            <h1>
+                <!-- When coming from "View applicants" -->
+                <h:panelGroup rendered="#{applicationBean.filteredByJob}">
+                    Applications for:
+                    #{applicationBean.getJobTitle(applicationBean.filterJobOfferId)}
+                </h:panelGroup>
+
+                <!-- When coming from the top nav -->
+                <h:panelGroup rendered="#{not applicationBean.filteredByJob}">
+                    All applications
+                </h:panelGroup>
+            </h1>
+
+            <p class="page-subtitle">
+                <h:panelGroup rendered="#{applicationBean.filteredByJob}">
+                    Only candidates who applied to this specific job post.
+                </h:panelGroup>
+                <h:panelGroup rendered="#{not applicationBean.filteredByJob}">
+                    Review all candidates who applied to your job posts.
+                </h:panelGroup>
+            </p>
+
+            <!-- Buttons under the subtitle -->
+            <div style="margin-top: 8px; display:flex; gap:8px; flex-wrap:wrap;">
+<!--                &lt;!&ndash; Back to job posts &ndash;&gt;-->
+<!--                <h:link outcome="/employerDashboard.xhtml"-->
+<!--                        value="Back to job posts"-->
+<!--                        styleClass="btn btn-light" />-->
+
+                <!-- Clear job filter (only shown when filtered) -->
+                <h:form rendered="#{applicationBean.filteredByJob}">
+                    <h:commandButton value="Show all applications"
+                                     action="#{applicationBean.clearJobFilter}"
+                                     styleClass="btn btn-light" />
+                </h:form>
+            </div>
+        </div>
+
+        <div class="card">
+            <h:dataTable value="#{applicationBean.applicationsForLoggedEmployer}"
+                         var="a"
+                         styleClass="job-table">
+
+            <h:column>
+                    <f:facet name="header">Job offer</f:facet>
+                    <strong>#{applicationBean.getJobTitle(a.jobOfferId)}</strong>
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Candidate</f:facet>
+                    #{applicationBean.getApplicantName(a.applicantId)}
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Status</f:facet>
+                    <span class="status-badge">
+                        #{a.status}
+                    </span>
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Match score</f:facet>
+                    #{a.matchScore != null ? a.matchScore : 0.0} %
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Date</f:facet>
+                    #{a.submittedAt.toLocalDate()}
+                </h:column>
+
+            </h:dataTable>
+        </div>
+
+    </ui:define>
+
+</ui:composition>
