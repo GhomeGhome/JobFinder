@@ -21,26 +21,28 @@
         </div>
 
         <div class="card">
+        <div class="scroll-container">
             <h:dataTable value="#{companyBean.allCompanies}"
-                         var="c"
-                         styleClass="job-table">
+                             var="c"
+                             styleClass="job-table">
 
-                <h:column>
-                    <f:facet name="header">Name</f:facet>
-                    #{c.name}
-                </h:column>
+                    <h:column>
+                        <f:facet name="header">Name</f:facet>
+                        #{c.name}
+                    </h:column>
 
-                <h:column>
-                    <f:facet name="header">Location</f:facet>
-                    #{c.location}
-                </h:column>
+                    <h:column>
+                        <f:facet name="header">Location</f:facet>
+                        #{c.location}
+                    </h:column>
 
-                <h:column>
-                    <f:facet name="header">Description</f:facet>
-                    #{c.description}
-                </h:column>
+                    <h:column>
+                        <f:facet name="header">Description</f:facet>
+                        #{c.description}
+                    </h:column>
 
-            </h:dataTable>
+                </h:dataTable>
+        </div>
         </div>
 
     </ui:define>

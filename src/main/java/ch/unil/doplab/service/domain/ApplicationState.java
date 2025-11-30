@@ -113,6 +113,27 @@ public class ApplicationState {
         roboLabs.setOwnerEmployerId(alice.getId());
         addCompany(roboLabs);
 
+        Company cloudNova = new Company();
+        cloudNova.setName("CloudNova SA");
+        cloudNova.setDescription("Cloud infrastructure & DevOps consulting");
+        cloudNova.setLocation("Basel");
+        cloudNova.setOwnerEmployerId(david.getId());
+        addCompany(cloudNova);
+
+        Company eduTech = new Company();
+        eduTech.setName("EduTech Labs");
+        eduTech.setDescription("Digital learning platforms and tools");
+        eduTech.setLocation("Fribourg");
+        eduTech.setOwnerEmployerId(alice.getId());
+        addCompany(eduTech);
+
+        Company alpineLogistics = new Company();
+        alpineLogistics.setName("Alpine Logistics SA");
+        alpineLogistics.setDescription("Logistics & supply-chain optimization");
+        alpineLogistics.setLocation("Lugano");
+        alpineLogistics.setOwnerEmployerId(bob.getId());
+        addCompany(alpineLogistics);
+
         // ========= APPLICANTS =========
         Applicant igor = new Applicant();
         igor.setFirstName("Igor");
@@ -268,6 +289,30 @@ public class ApplicationState {
         o9.setStatus(JobOfferStatus.Published);
         addOffer(o9);
 
+        JobOffer o10 = new JobOffer();
+        o10.setTitle("Cloud Architect");
+        o10.setDescription("Design scalable cloud architectures for enterprise clients.");
+        o10.setEmployerId(david.getId());
+        o10.setCompanyId(cloudNova.getId());
+        o10.setStatus(JobOfferStatus.Published);
+        addOffer(o10);
+
+        JobOffer o11 = new JobOffer();
+        o11.setTitle("UX/UI Designer");
+        o11.setDescription("Design intuitive interfaces for learning platforms.");
+        o11.setEmployerId(alice.getId());
+        o11.setCompanyId(eduTech.getId());
+        o11.setStatus(JobOfferStatus.Draft);
+        addOffer(o11);
+
+        JobOffer o12 = new JobOffer();
+        o12.setTitle("Operations Manager");
+        o12.setDescription("Oversee logistics operations and process improvement.");
+        o12.setEmployerId(bob.getId());
+        o12.setCompanyId(alpineLogistics.getId());
+        o12.setStatus(JobOfferStatus.Published);
+        addOffer(o12);
+
         // ========= APPLICATIONS =========
         // Adjust enum names if needed (SUBMITTED, IN_REVIEW, REJECTED, HIRED, ...)
 
@@ -353,6 +398,51 @@ public class ApplicationState {
         a9App.setMatchScore(80.0);
         a9App.setSubmittedAt(now.minusDays(6));
         addApplication(a9App);
+
+        // Emma also applies to Cloud Architect
+        Application a10App = new Application();
+        a10App.setJobOfferId(o10.getId());
+        a10App.setApplicantId(emma.getId());
+        a10App.setStatus(ApplicationStatus.Submitted);
+        a10App.setMatchScore(84.0);
+        a10App.setSubmittedAt(now.minusDays(3));
+        addApplication(a10App);
+
+        // Igor applies to Cloud Architect as well
+        Application a11App = new Application();
+        a11App.setJobOfferId(o10.getId());
+        a11App.setApplicantId(igor.getId());
+        a11App.setStatus(ApplicationStatus.In_review);
+        a11App.setMatchScore(90.0);
+        a11App.setSubmittedAt(now.minusDays(2));
+        addApplication(a11App);
+
+        // Chloé applies to UX/UI Designer (draft)
+        Application a12App = new Application();
+        a12App.setJobOfferId(o11.getId());
+        a12App.setApplicantId(chloe.getId());
+        a12App.setStatus(ApplicationStatus.Submitted);
+        a12App.setMatchScore(89.0);
+        a12App.setSubmittedAt(now.minusDays(1));
+        addApplication(a12App);
+
+        // Omar applies to Operations Manager
+        Application a13App = new Application();
+        a13App.setJobOfferId(o12.getId());
+        a13App.setApplicantId(omar.getId());
+        a13App.setStatus(ApplicationStatus.Submitted);
+        a13App.setMatchScore(76.0);
+        a13App.setSubmittedAt(now.minusDays(8));
+        addApplication(a13App);
+
+        // Lina applies to Operations Manager
+        Application a14App = new Application();
+        a14App.setJobOfferId(o12.getId());
+        a14App.setApplicantId(lina.getId());
+        a14App.setStatus(ApplicationStatus.In_review);
+        a14App.setMatchScore(82.0);
+        a14App.setSubmittedAt(now.minusDays(4));
+        addApplication(a14App);
     }
 
 

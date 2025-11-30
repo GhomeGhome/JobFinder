@@ -305,8 +305,37 @@ body.page-bg {
     text-decoration: underline;
 }
 
+/* Scrollable table container */
 .scroll-container {
-    max-height: 320px;
+    max-height: 260px;       /* adjust as you like */
     overflow-y: auto;
+    margin-top: 8px;
 }
+
+/* Optional: make the scrollbar visible/nice (especially on macOS) */
+.scroll-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scroll-container::-webkit-scrollbar-track {
+    background: #e5edff;
+    border-radius: 999px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+    background: #9ca3af;
+    border-radius: 999px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Firefox */
+.scroll-container {
+    scrollbar-width: thin;
+    scrollbar-color: #9ca3af #e5edff;
+}
+
+
 
