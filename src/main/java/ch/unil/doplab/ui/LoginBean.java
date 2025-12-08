@@ -56,7 +56,7 @@ public class LoginBean implements Serializable {
             loggedEmployer = emp;
             loggedApplicant = null;
             loggedIn = true;
-            return "employerDashboard?faces-redirect=true";
+            return "employerDashBoard?faces-redirect=true";
 
         } else { // APPLICANT
             Optional<Applicant> appOpt = applicationState.getAllApplicants()
@@ -79,7 +79,7 @@ public class LoginBean implements Serializable {
             loggedApplicant = app;
             loggedEmployer = null;
             loggedIn = true;
-            return "applicantDashboard?faces-redirect=true";
+            return "applicantDashBoard?faces-redirect=true";
         }
     }
 
