@@ -1,28 +1,48 @@
 package ch.unil.doplab;
 
+import jakarta.persistence.*;
+
 import java.util.*;
 
 /**
  * Représente un utilisateur générique (Employeur ou Applicant)
  * dans l’application JobFinder.
  */
+@MappedSuperclass
 public abstract class User {
 
     // ======================================================
     // ATTRIBUTS
     // ======================================================
 
+    @Id
     private UUID id;
+
+    @PrePersist
+    protected void ensureId() {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
+    }
+
+
+    @Column(nullable = false,  unique = true)
     private String username;     // unique
+    @Column(nullable = false)
     private String password;
+    @Column(nullable = false)
     private String firstName;
+    @Column(nullable = false)
     private String lastName;
+    @Column(nullable = false, unique = true)
     private String email;
 
     // Un User peut être lié à plusieurs JobOffers (Employeur)
+    @Transient
     protected List<UUID> jobOfferIds = new ArrayList<>();
 
     // Un User peut être lié à plusieurs Applications (Applicant)
+    @Transient
     protected List<UUID> applicationIds = new ArrayList<>();
 
 

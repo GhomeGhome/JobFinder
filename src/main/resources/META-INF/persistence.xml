@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
+             version="3.1">
+
+    <persistence-unit name="jobfinderPU" transaction-type="JTA">
+        <!-- This datasource must exist in Payara -->
+        <jta-data-source>jdbc/jobfinderDS</jta-data-source>
+
+        <!-- List all entities here (we start with 2, you add the rest) -->
+        <class>ch.unil.doplab.Company</class>
+        <class>ch.unil.doplab.JobOffer</class>
+        <class>ch.unil.doplab.Employer</class>
+        <class>ch.unil.doplab.Applicant</class>
+        <class>ch.unil.doplab.Application</class>
+        <class>ch.unil.doplab.Interview</class>
+
+        <properties>
+            <!-- For dev: nuke & recreate schema each redeploy -->
+            <property name="jakarta.persistence.schema-generation.database.action"
+                      value="drop-and-create"/>
+            <!-- Optional logging -->
+            <property name="eclipselink.logging.level" value="FINE"/>
+        </properties>
+    </persistence-unit>
+
+</persistence>

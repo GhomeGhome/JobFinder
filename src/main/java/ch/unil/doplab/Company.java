@@ -1,5 +1,6 @@
 package ch.unil.doplab;
 
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -7,20 +8,30 @@ import java.util.UUID;
 /**
  * Représente une entreprise dans JobFinder.
  */
+@Entity
+@Table(name = "companies")
 public class Company {
 
     // ======================================================
     // ATTRIBUTS
     // ======================================================
 
+    @Id
     private UUID id;
     private UUID ownerEmployerId;     // Le fondateur ou administrateur principal
 
+    @Column(nullable = false)
     private String name;
     private String location;
+
+    @Lob
     private String description;
 
+    // For now we **do not persist** these lists – we can always add proper
+    // relations later if needed. They are only used in memory.
+    @Transient
     private List<UUID> employerIds = new ArrayList<>();   // Tous les employeurs liés
+    @Transient
     private List<UUID> jobOfferIds = new ArrayList<>();   // Toutes les offres publiées
 
 
@@ -46,6 +57,13 @@ public class Company {
         this(null, ownerEmployerId, name, location, description);
     }
 
+    // Generate an id automatically if it's null when persisting
+    @PrePersist
+    public void ensureId() {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
+    }
 
     // ======================================================
     // GETTERS / SETTERS
@@ -68,7 +86,7 @@ public class Company {
 
 
     // ======================================================
-    // RELATIONS EMPLOYERS
+    // RELATIONS EMPLOYERS (ONLY IN MEMORY FOR NOW)
     // ======================================================
 
     public List<UUID> getEmployerIds() { return employerIds; }
@@ -84,7 +102,7 @@ public class Company {
 
 
     // ======================================================
-    // RELATIONS JOB OFFERS
+    // RELATIONS JOB OFFERS (IN MEMORY FOR NOW ONLY)
     // ======================================================
 
     public List<UUID> getJobOfferIds() { return jobOfferIds; }
