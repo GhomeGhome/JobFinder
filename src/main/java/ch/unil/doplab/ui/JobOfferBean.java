@@ -3,8 +3,8 @@ package ch.unil.doplab.ui;
 import ch.unil.doplab.Company;
 import ch.unil.doplab.Employer;
 import ch.unil.doplab.JobOffer;
-import ch.unil.doplab.JobOfferStatus;
-import ch.unil.doplab.service.domain.ApplicationState;
+import ch.unil.doplab.client.JobFinderClient; // NEW IMPORT
+// import ch.unil.doplab.service.domain.ApplicationState; // COMMENTED OUT
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -18,8 +18,11 @@ import java.util.stream.Collectors;
 @RequestScoped
 public class JobOfferBean {
 
+    // @Inject
+    // private ApplicationState appState; // COMMENTED OUT: We stop direct access
+
     @Inject
-    private ApplicationState appState;
+    private JobFinderClient client; // NEW: We use the bridge
 
     @Inject
     private LoginBean loginBean;
@@ -30,14 +33,19 @@ public class JobOfferBean {
 
     // Show all offers (no filter)
     public List<JobOffer> getAllOffers() {
+        /* OLD CODE:
         return appState.getAllOffers()
                 .values()
                 .stream()
                 .collect(Collectors.toList());
+        */
+
+        // NEW CODE:
+        return client.getAllJobOffers();
     }
 
     public List<JobOffer> getFilteredEmployerOffers() {
-        List<JobOffer> base = getEmployerOffers(); // your existing method
+        List<JobOffer> base = getEmployerOffers();
 
         if (statusFilter == null || statusFilter.isEmpty()) {
             return base;
@@ -50,7 +58,7 @@ public class JobOfferBean {
     }
 
     public List<JobOffer> getFilteredOffers() {
-        List<JobOffer> all = getAllOffers(); // or whatever your getter is
+        List<JobOffer> all = getAllOffers();
 
         if (searchKeyword == null || searchKeyword.trim().isEmpty()) {
             return all;
@@ -89,11 +97,16 @@ public class JobOfferBean {
 
         UUID employerId = current.getId();
 
+        /* OLD CODE:
         return appState.getAllOffers()
                 .values()
                 .stream()
                 .filter(o -> employerId.equals(o.getEmployerId()))
                 .collect(Collectors.toList());
+        */
+
+        // NEW CODE: Use the specialized method we added to the Client
+        return client.getOffersByEmployer(employerId);
     }
 
     public String companyName(JobOffer offer) {
@@ -101,11 +114,21 @@ public class JobOfferBean {
         if (companyId == null) {
             return "No company";
         }
-        Company c = appState.getCompany(companyId);
-        if (c == null) {
+
+        try {
+            // OLD CODE: Company c = appState.getCompany(companyId);
+
+            // NEW CODE:
+            Company c = client.getCompany(companyId);
+
+            if (c == null) {
+                return "Unknown company";
+            }
+            return c.getName();
+        } catch (Exception e) {
+            // Fallback if the API call fails or company not found
             return "Unknown company";
         }
-        return c.getName();
     }
 
     public String getSearchKeyword() {
@@ -124,4 +147,3 @@ public class JobOfferBean {
         this.statusFilter = statusFilter;
     }
 }
-

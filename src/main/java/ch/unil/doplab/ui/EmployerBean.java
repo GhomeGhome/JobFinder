@@ -1,7 +1,8 @@
 package ch.unil.doplab.ui;
 
 import ch.unil.doplab.Employer;
-import ch.unil.doplab.service.domain.ApplicationState;
+import ch.unil.doplab.client.JobFinderClient; // NEW IMPORT
+// import ch.unil.doplab.service.domain.ApplicationState; // REMOVE
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -11,10 +12,16 @@ import java.util.stream.Collectors;
 @Named("employerBean")
 @RequestScoped
 public class EmployerBean {
+
+    // @Inject
+    // private ApplicationState appState; // OLD
+
     @Inject
-    private ApplicationState appState;
+    private JobFinderClient client; // NEW
 
     public List<Employer> getAllEmployers() {
-        return appState.getAllEmployers().values().stream().collect(Collectors.toList());
+        // return appState.getAllEmployers().values().stream().collect(Collectors.toList());
+
+        return client.getAllEmployers(); // NEW
     }
 }

@@ -2,7 +2,8 @@ package ch.unil.doplab.ui;
 
 import ch.unil.doplab.Applicant;
 import ch.unil.doplab.Employer;
-import ch.unil.doplab.service.domain.ApplicationState;
+import ch.unil.doplab.client.JobFinderClient; // NEW IMPORT
+// import ch.unil.doplab.service.domain.ApplicationState; // REMOVE
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -18,15 +19,16 @@ public class LoginBean implements Serializable {
     private String username;
     private String password;
     private boolean loggedIn = false;
-
-    // "EMPLOYER" or "APPLICANT"
     private String role = "APPLICANT";
 
     private Employer loggedEmployer;
     private Applicant loggedApplicant;
 
+    // @Inject
+    // private ApplicationState applicationState; // OLD
+
     @Inject
-    private ApplicationState applicationState;
+    private JobFinderClient client; // NEW
 
     public String login() {
         if (username == null || username.isBlank() ||
@@ -36,8 +38,8 @@ public class LoginBean implements Serializable {
         }
 
         if ("EMPLOYER".equals(role)) {
-            Optional<Employer> empOpt = applicationState.getAllEmployers()
-                    .values()
+            // NEW: Fetch list from API
+            Optional<Employer> empOpt = client.getAllEmployers()
                     .stream()
                     .filter(e -> username.equalsIgnoreCase(e.getUsername()))
                     .findFirst();
@@ -59,8 +61,8 @@ public class LoginBean implements Serializable {
             return "employerDashBoard?faces-redirect=true";
 
         } else { // APPLICANT
-            Optional<Applicant> appOpt = applicationState.getAllApplicants()
-                    .values()
+            // NEW: Fetch list from API
+            Optional<Applicant> appOpt = client.getAllApplicants()
                     .stream()
                     .filter(a -> username.equalsIgnoreCase(a.getUsername()))
                     .findFirst();
@@ -83,6 +85,7 @@ public class LoginBean implements Serializable {
         }
     }
 
+    // ... (Keep the rest of the file EXACTLY as it was: logout, getters, setters) ...
 
     public String logout() {
         loggedIn = false;
@@ -99,23 +102,17 @@ public class LoginBean implements Serializable {
                 .addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, msg, null));
     }
 
-    // Helpers for JSF
     public boolean isEmployer() { return "EMPLOYER".equals(role); }
     public boolean isApplicant() { return "APPLICANT".equals(role); }
 
     public Employer getLoggedEmployer() { return loggedEmployer; }
     public Applicant getLoggedApplicant() { return loggedApplicant; }
 
-    // Getters and Setters
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
     public boolean isLoggedIn() { return loggedIn; }
-    public String getRole() {
-        return role;
-    }
-    public void setRole(String role) {
-        this.role = role;
-    }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 }

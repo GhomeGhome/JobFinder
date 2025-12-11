@@ -4,7 +4,8 @@ import ch.unil.doplab.Application;
 import ch.unil.doplab.Applicant;
 import ch.unil.doplab.JobOffer;
 import ch.unil.doplab.Employer;
-import ch.unil.doplab.service.domain.ApplicationState;
+import ch.unil.doplab.client.JobFinderClient; // NEW IMPORT
+// import ch.unil.doplab.service.domain.ApplicationState; // REMOVE
 
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
@@ -20,13 +21,15 @@ import java.util.stream.Collectors;
 @SessionScoped
 public class ApplicationBean implements Serializable {
 
-    @Inject
-    private ApplicationState appState;
+    // @Inject
+    // private ApplicationState appState; // OLD
 
     @Inject
-    private LoginBean loginBean;   // NEW
+    private JobFinderClient client; // NEW
 
-    // ---- NEW: optional filter by job for the employer view ----
+    @Inject
+    private LoginBean loginBean;
+
     private UUID filterJobOfferId;
 
     public UUID getFilterJobOfferId() {
@@ -37,23 +40,20 @@ public class ApplicationBean implements Serializable {
         this.filterJobOfferId = filterJobOfferId;
     }
 
-    // Called from "View applicants" link in employerDashboard.xhtml
     public String openApplicationsForJob(UUID offerId) {
         this.filterJobOfferId = offerId;
-        // go to employerApplications.xhtml (same outcome name as your page)
         return "employerApplications";
     }
 
-    // ----------------------------------------------------------------
-
     public List<Application> getAllApplications() {
-        return appState.getAllApplications().values().stream()
-                .collect(Collectors.toList());
+        // return appState.getAllApplications().values().stream()
+        //         .collect(Collectors.toList());
+
+        return client.getAllApplications(); // NEW
     }
 
     /**
      * Applications for job offers owned by the logged-in employer.
-     * If filterJobOfferId != null, we additionally filter by that job only.
      */
     public List<Application> getApplicationsForLoggedEmployer() {
         if (!loginBean.isEmployer()) {
@@ -67,9 +67,15 @@ public class ApplicationBean implements Serializable {
 
         UUID employerId = current.getId();
 
-        return appState.getAllApplications().values().stream()
+        // NEW STRATEGY: Get all applications from API, then filter in memory.
+        // Ideally, we would have a backend endpoint for this, but this works for now.
+        List<Application> allApps = client.getAllApplications();
+
+        return allApps.stream()
                 .filter(app -> {
-                    JobOffer offer = appState.getOffer(app.getJobOfferId());
+                    // JobOffer offer = appState.getOffer(app.getJobOfferId()); // OLD
+                    JobOffer offer = client.getJobOffer(app.getJobOfferId()); // NEW
+
                     if (offer == null) return false;
 
                     // only offers of this employer
@@ -89,23 +95,22 @@ public class ApplicationBean implements Serializable {
 
     // --- Helper Methods for the UI ---
 
-    // Translates JobOfferId -> Job Title
     public String getJobTitle(UUID offerId) {
         if (offerId == null) return "Unknown";
-        JobOffer offer = appState.getOffer(offerId);
+        // JobOffer offer = appState.getOffer(offerId); // OLD
+        JobOffer offer = client.getJobOffer(offerId); // NEW
         return (offer != null) ? offer.getTitle() : "Offer Removed";
     }
 
-    // Translates ApplicantId -> First Last Name
     public String getApplicantName(UUID applicantId) {
         if (applicantId == null) return "Unknown";
-        Applicant applicant = appState.getApplicant(applicantId);
+        // Applicant applicant = appState.getApplicant(applicantId); // OLD
+        Applicant applicant = client.getApplicant(applicantId); // NEW
+
         return (applicant != null)
                 ? applicant.getFirstName() + " " + applicant.getLastName()
                 : "User Removed";
     }
-
-    // in ApplicationBean
 
     public boolean isFilteredByJob() {
         return filterJobOfferId != null;
@@ -113,8 +118,6 @@ public class ApplicationBean implements Serializable {
 
     public String clearJobFilter() {
         this.filterJobOfferId = null;
-        // stay on the same page
         return null;
     }
-
 }
