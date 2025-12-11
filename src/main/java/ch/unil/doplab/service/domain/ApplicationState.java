@@ -690,4 +690,67 @@ public class ApplicationState {
 //                .filter(i -> employerId.equals(i.getEmployerId()))
 //                .collect(Collectors.toList());
 //    }
+    // ======================================================
+    // NEW METHODS FOR JSF BEANS
+    // ======================================================
+
+    /**
+     * For Igor's "My Applications" page.
+     */
+    public List<Application> getApplicationsByApplicantId(UUID applicantId) {
+        return applications.values().stream()
+                .filter(app -> app.getApplicantId().equals(applicantId))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * For Employer's "View Applicants" button on a specific job.
+     */
+    public List<Application> getApplicationsByJobId(UUID jobId) {
+        return applications.values().stream()
+                .filter(app -> app.getJobOfferId().equals(jobId))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * For Employer's "All Applications" page.
+     */
+    public List<Application> getApplicationsByEmployerId(UUID employerId) {
+        // 1. Find all job IDs owned by this employer
+        List<UUID> employerJobIds = jobOffers.values().stream()
+                .filter(job -> job.getEmployerId().equals(employerId))
+                .map(JobOffer::getId)
+                .collect(Collectors.toList());
+
+        // 2. Return applications that match any of those Job IDs
+        return applications.values().stream()
+                .filter(app -> employerJobIds.contains(app.getJobOfferId()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Helper to get a Job Title by ID.
+     */
+    public String getJobTitleById(UUID jobId) {
+        JobOffer offer = jobOffers.get(jobId);
+        return (offer != null) ? offer.getTitle() : "Unknown Job";
+    }
+
+    /**
+     * Helper to get an Applicant Name by ID.
+     */
+    public String getApplicantNameById(UUID applicantId) {
+        Applicant applicant = applicants.get(applicantId);
+        return (applicant != null) ? applicant.getFirstName() + " " + applicant.getLastName() : "Unknown";
+    }
+
+    /**
+     * Helper to get Company Name by Job ID
+     */
+    public String getCompanyNameByJobId(UUID jobId) {
+        JobOffer offer = jobOffers.get(jobId);
+        if (offer == null) return "Unknown";
+        Company c = companies.get(offer.getCompanyId());
+        return (c != null) ? c.getName() : "Unknown";
+    }
 }

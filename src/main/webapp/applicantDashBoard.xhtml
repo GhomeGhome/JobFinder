@@ -33,12 +33,29 @@
                     <span class="app-logo">JobFinder</span>
                     <span class="top-bar-section">
                     <!-- Applicant links -->
-                        <h:link outcome="applicantDashboard" value="Browse offers"
+                        <h:link outcome="applicantDashboard" value="Hello There!"
                                 styleClass="top-link"
                                 rendered="#{loginBean.isApplicant()}" />
-                    <h:link outcome="applicantApplications" value="My applications"
-                            styleClass="top-link"
-                            rendered="#{loginBean.isApplicant()}" />
+                        <h:link outcome="/applicantJobs.xhtml"
+                            value="Jobs"
+                            styleClass="top-link #{view.viewId eq '/applicantJobs.xhtml' ? 'top-link-active' : ''}" />
+
+                    <h:link outcome="/applicantApplications.xhtml"
+                            value="My applications"
+                            styleClass="top-link #{view.viewId eq '/applicantApplications.xhtml' ? 'top-link-active' : ''}" />
+
+                    <h:link outcome="/applicantProfile.xhtml"
+                            value="Profile"
+                            styleClass="top-link #{view.viewId eq '/applicantProfile.xhtml' ? 'top-link-active' : ''}" />
+
+                    <h:link outcome="/applicantInterviews.xhtml"
+                            value="Interviews"
+                            styleClass="top-link #{view.viewId eq '/applicantInterviews.xhtml' ? 'top-link-active' : ''}" />
+
+                    <h:link outcome="/applicantCompanies.xhtml"
+                            value="Companies"
+                            styleClass="top-link #{view.viewId eq '/applicantCompanies.xhtml' ? 'top-link-active' : ''}" />
+
 
                         <!-- Employer links -->
                         <h:link outcome="employerDashboard" value="Offers"

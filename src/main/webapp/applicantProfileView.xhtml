@@ -1,0 +1,67 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                template="#{loginBean.isEmployer() ? '/TEMPLATES/employerTemplate.xhtml' : '/TEMPLATES/applicantTemplate.xhtml'}">
+
+    <ui:define name="title">Candidate Profile</ui:define>
+
+    <f:metadata>
+        <f:viewParam name="id" value="#{profileViewBean.targetId}" />
+        <f:viewAction action="#{profileViewBean.initApplicant}" />
+    </f:metadata>
+
+    <ui:define name="content">
+        <h:link outcome="employerApplicants"
+                value="← Back to list"
+                styleClass="btn-link"
+                style="margin-bottom:16px; display:inline-block;"
+                rendered="#{loginBean.isEmployer()}" />
+
+        <h:link outcome="applicantProfile"
+                value="← Back to Edit Profile"
+                styleClass="btn-link"
+                style="margin-bottom:16px; display:inline-block;"
+                rendered="#{loginBean.isApplicant()}" />
+
+        <div class="card" style="display: flex; gap: 32px; align-items: start;">
+            <div style="text-align: center; min-width: 150px;">
+                <img src="#{profileViewBean.getAvatarUrl(profileViewBean.targetApplicant)}"
+                     alt="Profile Pic"
+                     style="border-radius: 50%; width: 120px; height: 120px; object-fit: cover; margin-bottom: 12px;" />
+                <div>
+                    <span class="status-badge">Applicant</span>
+                </div>
+            </div>
+
+            <div style="flex-grow: 1;">
+                <h2 style="margin-top: 0;">#{profileViewBean.targetApplicant.firstName} #{profileViewBean.targetApplicant.lastName}</h2>
+                <p style="color: #6b7280; margin-top: -8px;">#{profileViewBean.targetApplicant.email}</p>
+
+                <div style="margin-top: 24px;">
+                    <strong class="field-label">Contact / Location</strong>
+                    <p>#{profileViewBean.targetApplicant.contactInfo}</p>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <strong class="field-label">About</strong>
+                    <p>#{profileViewBean.targetApplicant.descriptionInfo}</p>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <strong class="field-label">CV / Resume</strong>
+                    <p>#{profileViewBean.targetApplicant.cvInfo}</p>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <strong class="field-label">Skills</strong>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                        <ui:repeat value="#{profileViewBean.targetApplicant.skills}" var="skill">
+                            <span class="status-badge" style="background: #e0f2fe; color: #0284c7;">#{skill}</span>
+                        </ui:repeat>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ui:define>
+</ui:composition>

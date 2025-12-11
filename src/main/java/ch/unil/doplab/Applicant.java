@@ -90,5 +90,21 @@ public class Applicant extends User {
                 .formatted(getUsername(), contactInfo, skills);
     }
 
+    public String getSkillsAsString() {
+        if (skills == null || skills.isEmpty()) {
+            return "";
+        }
+        return String.join(", ", skills);
+    }
+
+    public void setSkillsAsString(String value) {
+        this.skills = new java.util.ArrayList<>();
+        if (value != null && !value.isBlank()) {
+            for (String s : value.split(",")) {
+                this.skills.add(s.trim());
+            }
+        }
+        }
+
 }
 

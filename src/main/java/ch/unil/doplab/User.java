@@ -18,6 +18,7 @@ public abstract class User {
     private String firstName;
     private String lastName;
     private String email;
+    private String photoUrl;
 
     // Un User peut être lié à plusieurs JobOffers (Employeur)
     protected List<UUID> jobOfferIds = new ArrayList<>();
@@ -72,6 +73,13 @@ public abstract class User {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
+    }
 
     // ======================================================
     // JobOffer IDs (pour Employeur)

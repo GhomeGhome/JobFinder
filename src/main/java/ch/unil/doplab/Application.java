@@ -57,6 +57,10 @@ public class Application {
         this.matchScore = matchScore;
     }
 
+    public String getDateApplied() {
+        return this.updatedAt.toString();
+    }
+
 
     // ======================================================
     // GETTERS / SETTERS

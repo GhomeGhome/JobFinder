@@ -4,13 +4,12 @@ import ch.unil.doplab.Application;
 import ch.unil.doplab.Applicant;
 import ch.unil.doplab.JobOffer;
 import ch.unil.doplab.Employer;
-import ch.unil.doplab.client.JobFinderClient; // NEW IMPORT
-// import ch.unil.doplab.service.domain.ApplicationState; // REMOVE
+import ch.unil.doplab.client.JobFinderClient;
+// import ch.unil.doplab.service.domain.ApplicationState; // REMOVED
 
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
@@ -32,58 +31,58 @@ public class ApplicationBean implements Serializable {
 
     private UUID filterJobOfferId;
 
-    public UUID getFilterJobOfferId() {
-        return filterJobOfferId;
-    }
+    // --- Actions ---
 
-    public void setFilterJobOfferId(UUID filterJobOfferId) {
-        this.filterJobOfferId = filterJobOfferId;
-    }
-
+    /**
+     * Called when clicking "View applicants" on the dashboard.
+     */
     public String openApplicationsForJob(UUID offerId) {
         this.filterJobOfferId = offerId;
-        return "employerApplications";
+        // Navigate to the applications page
+        return "employerApplications?faces-redirect=true&includeViewParams=true";
     }
 
-    public List<Application> getAllApplications() {
-        // return appState.getAllApplications().values().stream()
-        //         .collect(Collectors.toList());
+    public String clearJobFilter() {
+        this.filterJobOfferId = null;
+        // Reload page without filter
+        return "employerApplications?faces-redirect=true";
+    }
 
-        return client.getAllApplications(); // NEW
+    // --- Data Access ---
+
+    public List<Application> getAllApplications() {
+        return client.getAllApplications();
     }
 
     /**
-     * Applications for job offers owned by the logged-in employer.
+     * Main list for 'employerApplications.xhtml'.
+     * Filters: 1. By Employer Owner, 2. By Specific Job (if selected).
      */
     public List<Application> getApplicationsForLoggedEmployer() {
-        if (!loginBean.isEmployer()) {
+        // Security check
+        if (!loginBean.isEmployer() || loginBean.getLoggedEmployer() == null) {
             return Collections.emptyList();
         }
 
-        Employer current = loginBean.getLoggedEmployer();
-        if (current == null || current.getId() == null) {
-            return Collections.emptyList();
-        }
+        UUID employerId = loginBean.getLoggedEmployer().getId();
 
-        UUID employerId = current.getId();
-
-        // NEW STRATEGY: Get all applications from API, then filter in memory.
-        // Ideally, we would have a backend endpoint for this, but this works for now.
+        // 1. Fetch EVERYTHING from server
         List<Application> allApps = client.getAllApplications();
 
+        // 2. Filter in memory
         return allApps.stream()
                 .filter(app -> {
-                    // JobOffer offer = appState.getOffer(app.getJobOfferId()); // OLD
-                    JobOffer offer = client.getJobOffer(app.getJobOfferId()); // NEW
+                    // Fetch the job for this application to check ownership
+                    JobOffer offer = client.getJobOffer(app.getJobOfferId());
 
-                    if (offer == null) return false;
+                    if (offer == null) return false; // Orphaned application
 
-                    // only offers of this employer
+                    // CHECK A: Is this job owned by the logged-in employer?
                     if (!employerId.equals(offer.getEmployerId())) {
                         return false;
                     }
 
-                    // if a specific job is selected, filter further
+                    // CHECK B: Are we filtering by a specific job ID?
                     if (filterJobOfferId != null && !filterJobOfferId.equals(offer.getId())) {
                         return false;
                     }
@@ -93,31 +92,33 @@ public class ApplicationBean implements Serializable {
                 .collect(Collectors.toList());
     }
 
-    // --- Helper Methods for the UI ---
+    // --- Helpers for UI ---
 
     public String getJobTitle(UUID offerId) {
         if (offerId == null) return "Unknown";
-        // JobOffer offer = appState.getOffer(offerId); // OLD
-        JobOffer offer = client.getJobOffer(offerId); // NEW
+        JobOffer offer = client.getJobOffer(offerId);
         return (offer != null) ? offer.getTitle() : "Offer Removed";
     }
 
     public String getApplicantName(UUID applicantId) {
         if (applicantId == null) return "Unknown";
-        // Applicant applicant = appState.getApplicant(applicantId); // OLD
-        Applicant applicant = client.getApplicant(applicantId); // NEW
-
+        Applicant applicant = client.getApplicant(applicantId);
         return (applicant != null)
                 ? applicant.getFirstName() + " " + applicant.getLastName()
                 : "User Removed";
     }
 
-    public boolean isFilteredByJob() {
-        return filterJobOfferId != null;
+    // --- Getters/Setters ---
+
+    public UUID getFilterJobOfferId() {
+        return filterJobOfferId;
     }
 
-    public String clearJobFilter() {
-        this.filterJobOfferId = null;
-        return null;
+    public void setFilterJobOfferId(UUID filterJobOfferId) {
+        this.filterJobOfferId = filterJobOfferId;
+    }
+
+    public boolean isFilteredByJob() {
+        return filterJobOfferId != null;
     }
 }

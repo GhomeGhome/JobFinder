@@ -24,7 +24,7 @@
             <div class="top-bar-left">
                 <span class="app-logo">JobFinder</span>
                 <div class="top-bar-section">
-                    <h:link outcome="/employerDashboard.xhtml"
+                    <h:link outcome="/employerDashBoard.xhtml"
                             value="Job posts"
                             styleClass="top-link #{view.viewId eq '/employerDashboard.xhtml' ? 'top-link-active' : ''}" />
 
@@ -39,6 +39,10 @@
                     <h:link outcome="/employerCompanies.xhtml"
                             value="Companies"
                             styleClass="top-link #{view.viewId eq '/employerCompanies.xhtml' ? 'top-link-active' : ''}" />
+
+                    <h:link outcome="/employerProfile.xhtml"
+                            value="Profile"
+                            styleClass="top-link #{view.viewId eq '/employerProfile.xhtml' ? 'top-link-active' : ''}" />
                 </div>
             </div>
 

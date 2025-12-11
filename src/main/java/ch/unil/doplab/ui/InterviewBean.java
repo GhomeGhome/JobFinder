@@ -254,4 +254,47 @@ public class InterviewBean implements Serializable {
         }
         return null;
     }
+    /**
+     * NEW: Returns interviews for the logged-in applicant.
+     */
+    public List<InterviewDTO> getApplicantInterviews() {
+        List<InterviewDTO> result = new ArrayList<>();
+
+        // 1. Get current applicant ID
+        if (!loginBean.isApplicant() || loginBean.getLoggedApplicant() == null) {
+            return result;
+        }
+        // Assuming your Applicant entity uses UUID or Long.
+        // Based on your InterviewBean, it seems we match objects directly or by ID.
+        // Let's use the ID for safety.
+        Object myId = loginBean.getLoggedApplicant().getId();
+
+        for (Interview interview : INTERVIEWS) {
+            // Check if this interview belongs to the current applicant
+            if (interview.getApplicant() != null &&
+                    interview.getApplicant().getId().equals(myId)) {
+
+                JobOffer job = interview.getJobOffer();
+
+                String jobTitle = (job != null) ? job.getTitle() : "";
+                String companyName = (job != null) ? jobOfferBean.companyName(job) : "";
+                // Applicant doesn't need to see their own name, they want Company name
+
+                String modeLabel = (interview.getMode() != null) ? interview.getMode().name() : "";
+                String statusLabel = (interview.getStatus() != null) ? interview.getStatus().name() : "";
+
+                result.add(new InterviewDTO(
+                        interview.getId(),
+                        jobTitle,
+                        companyName,
+                        "", // Applicant name not needed for their own view
+                        interview.getScheduledAt(),
+                        modeLabel,
+                        statusLabel,
+                        interview.getLocationOrLink()
+                ));
+            }
+        }
+        return result;
+    }
 }

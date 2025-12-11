@@ -1,0 +1,67 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                template="#{loginBean.isApplicant() ? '/TEMPLATES/applicantTemplate.xhtml' : '/TEMPLATES/employerTemplate.xhtml'}">
+
+    <ui:define name="title">Employer Profile</ui:define>
+
+    <f:metadata>
+        <f:viewParam name="id" value="#{profileViewBean.targetId}" />
+        <f:viewAction action="#{profileViewBean.initEmployer}" />
+    </f:metadata>
+
+    <ui:define name="content">
+        <h:link outcome="applicantJobs"
+                value="← Back to jobs"
+                styleClass="btn-link"
+                style="margin-bottom:16px; display:inline-block;"
+                rendered="#{loginBean.isApplicant()}" />
+
+        <h:link outcome="employerProfile"
+                value="← Back to Edit Profile"
+                styleClass="btn-link"
+                style="margin-bottom:16px; display:inline-block;"
+                rendered="#{loginBean.isEmployer()}" />
+
+        <div class="card" style="display: flex; gap: 32px; align-items: start;">
+            <div style="text-align: center; min-width: 150px;">
+                <img src="#{profileViewBean.getAvatarUrl(profileViewBean.targetEmployer)}"
+                     alt="Profile Pic"
+                     style="border-radius: 12px; width: 120px; height: 120px; object-fit: cover; margin-bottom: 12px;" />
+            </div>
+
+            <div style="flex-grow: 1;">
+                <h2 style="margin-top: 0;">#{profileViewBean.targetEmployer.firstName} #{profileViewBean.targetEmployer.lastName}</h2>
+                <p style="color: #6b7280; margin-top: -8px;">#{profileViewBean.targetEmployer.email}</p>
+
+                <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+
+                <h3 style="font-size: 18px; margin-bottom: 12px;">Company Details</h3>
+
+                <h:panelGroup rendered="#{not empty profileViewBean.targetCompany}">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <strong class="field-label">Current Company</strong>
+                            <p>#{profileViewBean.targetCompany.name}</p>
+                        </div>
+                        <div>
+                            <strong class="field-label">Location</strong>
+                            <p>#{profileViewBean.targetCompany.location}</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 16px;">
+                        <strong class="field-label">Company Description</strong>
+                        <p>#{profileViewBean.targetCompany.description}</p>
+                    </div>
+                </h:panelGroup>
+
+                <h:panelGroup rendered="#{empty profileViewBean.targetCompany}">
+                    <p style="color: #6b7280; font-style: italic;">No company details linked yet.</p>
+                </h:panelGroup>
+
+            </div>
+        </div>
+    </ui:define>
+</ui:composition>

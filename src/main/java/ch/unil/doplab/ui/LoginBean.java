@@ -23,6 +23,7 @@ public class LoginBean implements Serializable {
 
     private Employer loggedEmployer;
     private Applicant loggedApplicant;
+    private ch.unil.doplab.Company loggedCompany;
 
     // @Inject
     // private ApplicationState applicationState; // OLD
@@ -56,6 +57,10 @@ public class LoginBean implements Serializable {
             }
 
             loggedEmployer = emp;
+            if (loggedEmployer.getCompanyId() != null) {
+                // Fetch the company details so we can edit them
+                this.loggedCompany = client.getCompany(loggedEmployer.getCompanyId());
+            }
             loggedApplicant = null;
             loggedIn = true;
             return "employerDashBoard?faces-redirect=true";
@@ -85,7 +90,16 @@ public class LoginBean implements Serializable {
         }
     }
 
-    // ... (Keep the rest of the file EXACTLY as it was: logout, getters, setters) ...
+    public void setLoggedApplicant(ch.unil.doplab.Applicant loggedApplicant) {
+        this.loggedApplicant = loggedApplicant;
+    }
+
+    public void setLoggedEmployer(ch.unil.doplab.Employer loggedEmployer) {
+        this.loggedEmployer = loggedEmployer;
+    }
+
+    public ch.unil.doplab.Company getLoggedCompany() { return loggedCompany; }
+    public void setLoggedCompany(ch.unil.doplab.Company loggedCompany) { this.loggedCompany = loggedCompany; }
 
     public String logout() {
         loggedIn = false;

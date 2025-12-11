@@ -2,37 +2,37 @@
                 xmlns:h="http://xmlns.jcp.org/jsf/html"
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-                template="/TEMPLATES/applicantTemplate.xhtml">
+                template="/TEMPLATES/employerTemplate.xhtml">
 
-    <ui:define name="title">Edit Profile – JobFinder</ui:define>
+    <ui:define name="title">Employer Profile – JobFinder</ui:define>
 
     <ui:define name="content">
         <div class="page-header">
-            <h1>Edit Profile</h1>
-            <p class="page-subtitle">Update your personal information, CV, and skills.</p>
+            <h1>Employer Profile</h1>
+            <p class="page-subtitle">Manage your account and company details.</p>
         </div>
 
         <div style="display: flex; gap: 32px; align-items: start; flex-wrap: wrap;">
 
             <div class="card" style="text-align: center; width: 250px; flex-shrink: 0;">
-                <img src="#{profileViewBean.getAvatarUrl(loginBean.loggedApplicant)}"
+                <img src="#{profileViewBean.getAvatarUrl(loginBean.loggedEmployer)}"
                      alt="Avatar"
-                     style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px;" />
+                     style="width: 120px; height: 120px; border-radius: 12px; object-fit: cover; margin-bottom: 16px;" />
 
                 <div style="margin-bottom: 16px;">
-                    <span class="status-badge">Applicant</span>
+                    <span class="status-badge" style="background-color: #e0e7ff; color: #4338ca;">Employer</span>
                 </div>
 
                 <div class="field" style="text-align: left; margin-bottom: 16px;">
                     <label class="field-label" style="font-size: 12px;">Profile Picture URL</label>
-                    <h:inputText value="#{loginBean.loggedApplicant.photoUrl}"
+                    <h:inputText value="#{loginBean.loggedEmployer.photoUrl}"
                                  styleClass="input-full"
                                  style="font-size: 12px; padding: 8px;"
                                  placeholder="Paste image link (https://...)" />
                 </div>
 
-                <h:link outcome="/applicantProfileView.xhtml" styleClass="btn btn-light btn-full">
-                    <f:param name="id" value="#{loginBean.loggedApplicant.id}" />
+                <h:link outcome="/employerProfileView.xhtml" styleClass="btn btn-light btn-full">
+                    <f:param name="id" value="#{loginBean.loggedEmployer.id}" />
                     👁️ View Public Profile
                 </h:link>
             </div>
@@ -48,39 +48,33 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                         <div class="field">
                             <span class="field-label">First Name</span>
-                            <h:inputText value="#{loginBean.loggedApplicant.firstName}" styleClass="input-full" required="true" />
+                            <h:inputText value="#{loginBean.loggedEmployer.firstName}" styleClass="input-full" required="true" />
                         </div>
                         <div class="field">
                             <span class="field-label">Last Name</span>
-                            <h:inputText value="#{loginBean.loggedApplicant.lastName}" styleClass="input-full" required="true" />
+                            <h:inputText value="#{loginBean.loggedEmployer.lastName}" styleClass="input-full" required="true" />
                         </div>
                     </div>
 
                     <div class="field">
-                        <span class="field-label">City / Contact Info</span>
-                        <h:inputText value="#{loginBean.loggedApplicant.contactInfo}" styleClass="input-full" />
-                    </div>
-
-                    <div class="field">
-                        <span class="field-label">About Me (Description)</span>
-                        <h:inputTextarea value="#{loginBean.loggedApplicant.descriptionInfo}" styleClass="input-full" rows="3" />
+                        <span class="field-label">Enterprise Name (Your Role)</span>
+                        <h:inputText value="#{loginBean.loggedEmployer.enterpriseName}" styleClass="input-full" />
                     </div>
 
                     <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-                        Professional Details
+                        Company Details
                     </h3>
 
                     <div class="field">
-                        <span class="field-label">CV / Resume (URL or Text)</span>
-                        <h:inputText value="#{loginBean.loggedApplicant.cvInfo}" styleClass="input-full" />
-                        <small style="color: #6b7280">Paste a link to your PDF or Google Doc.</small>
+                        <span class="field-label">Location (City)</span>
+                        <h:inputText value="#{loginBean.loggedCompany.location}" styleClass="input-full" />
                     </div>
 
                     <div class="field">
-                        <span class="field-label">Skills</span>
-                        <h:inputText value="#{loginBean.loggedApplicant.skillsAsString}"
-                                     styleClass="input-full" />
-                        <small style="color: #6b7280">E.g., [Java, Python, SQL]</small>
+                        <span class="field-label">About the Company (Description)</span>
+                        <h:inputTextarea value="#{loginBean.loggedCompany.description}"
+                                         styleClass="input-full"
+                                         rows="4" />
                     </div>
 
                     <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 8px; color: #dc2626;">
@@ -89,16 +83,15 @@
 
                     <div class="field">
                         <span class="field-label">Email Address</span>
-                        <h:inputText value="#{loginBean.loggedApplicant.email}"
+                        <h:inputText value="#{loginBean.loggedEmployer.email}"
                                      styleClass="input-full"
                                      readonly="true"
                                      style="background-color: #f3f4f6; color: #6b7280;" />
-                        <small>Email cannot be changed directly.</small>
                     </div>
 
                     <div class="field">
                         <span class="field-label">New Password</span>
-                        <h:inputSecret value="#{loginBean.loggedApplicant.password}" styleClass="input-full" redisplay="true" />
+                        <h:inputSecret value="#{loginBean.loggedEmployer.password}" styleClass="input-full" redisplay="true" />
                     </div>
 
                     <div style="margin-top: 32px;">
