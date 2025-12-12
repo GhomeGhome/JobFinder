@@ -3,6 +3,7 @@ package ch.unil.doplab.service.rest;
 import ch.unil.doplab.Applicant;
 import ch.unil.doplab.service.domain.ApplicationState;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 
@@ -33,6 +34,7 @@ public class ApplicantResource {
         return a;
     }
 
+
     @POST
     public Response create(Applicant applicant, @Context UriInfo uriInfo) {
         Applicant created = state.addApplicant(applicant);
@@ -46,10 +48,14 @@ public class ApplicantResource {
 
     @PUT
     @Path("/{id}")
-    public Applicant update(@PathParam("id") String idStr, Applicant updated) {
+    @Transactional
+    public Applicant updateApplicant(@PathParam("id") String idStr, Applicant updated) {
         UUID id = UUID.fromString(idStr);
 
-        boolean ok = state.setApplicant(id, updated);   // needs setApplicant in ApplicationState
+        // Make sure the updated object keeps the same ID
+        updated.setId(id);
+
+        boolean ok = state.setApplicant(id, updated);   // we'll define this next
         if (!ok) {
             throw new NotFoundException("Applicant not found");
         }

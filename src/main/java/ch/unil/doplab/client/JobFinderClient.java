@@ -120,38 +120,48 @@ public class JobFinderClient {
                 .post(Entity.json("")); // Empty body as params are in URL
     }
 
-    public boolean updateApplicant(ch.unil.doplab.Applicant app) {
+    public boolean updateApplicant(Applicant app) {
         try {
-            target.path("applicants")
+            Response response = target.path("applicants")
                     .path(app.getId().toString())
                     .request(MediaType.APPLICATION_JSON)
-                    .put(jakarta.ws.rs.client.Entity.json(app));
-            return true;
+                    .put(Entity.json(app));
+
+            int status = response.getStatus();
+            response.close();
+            return status >= 200 && status < 300;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    public boolean updateEmployer(ch.unil.doplab.Employer emp) {
+    public boolean updateEmployer(Employer emp) {
         try {
-            target.path("employers")
+            Response response = target.path("employers")
                     .path(emp.getId().toString())
                     .request(MediaType.APPLICATION_JSON)
-                    .put(jakarta.ws.rs.client.Entity.json(emp));
-            return true;
+                    .put(Entity.json(emp));
+
+            int status = response.getStatus();
+            response.close();
+            return status >= 200 && status < 300;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
-    public boolean updateCompany(ch.unil.doplab.Company company) {
+
+    public boolean updateCompany(Company company) {
         try {
-            target.path("companies")
-                    .path(company.getId().toString()) // Full replacement strategy
+            Response response = target.path("companies")
+                    .path(company.getId().toString())
                     .request(MediaType.APPLICATION_JSON)
-                    .put(jakarta.ws.rs.client.Entity.json(company));
-            return true;
+                    .put(Entity.json(company));
+
+            int status = response.getStatus();
+            response.close();
+            return status >= 200 && status < 300;
         } catch (Exception e) {
             e.printStackTrace();
             return false;

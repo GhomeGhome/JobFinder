@@ -573,23 +573,29 @@ public class ApplicationState {
         return e;
     }
 
+    @Transactional
     public boolean setEmployer(UUID id, Employer updated) {
-        Employer existing = employers.get(id);
+        Employer existing = em.find(Employer.class, id);
         if (existing == null) {
             return false;
         }
 
-        // Keep same id
         updated.setId(id);
 
-        // Optionally keep companyId if client did not send it
+        // preserve relationship if not sent by client
         if (updated.getCompanyId() == null) {
             updated.setCompanyId(existing.getCompanyId());
         }
 
-        employers.put(id, updated);
+        // write to DB
+        Employer merged = em.merge(updated);
+
+        // update RAM cache
+        employers.put(id, merged);
+
         return true;
     }
+
 
     public boolean removeEmployer(UUID id) {
         Employer emp = employers.remove(id);
@@ -631,27 +637,42 @@ public class ApplicationState {
         return a;
     }
 
+    @Transactional
     public boolean setApplicant(UUID id, Applicant updated) {
-        Applicant existing = applicants.get(id);
+        // 1) Check existence in DB
+        Applicant existing = em.find(Applicant.class, id);
         if (existing == null) {
             return false;
         }
 
+        // 2) Enforce ID
         updated.setId(id);
-        applicants.put(id, updated);
+
+        // 3) Merge into DB
+        Applicant merged = em.merge(updated);
+
+        // 4) Update in-memory cache
+        applicants.put(id, merged);
+
         return true;
     }
 
+    @Transactional
     public boolean removeApplicant(UUID id) {
         Applicant ap = applicants.remove(id);
         if (ap == null) {
             return false;
         }
 
-        // Remove all applications of this applicant
-        // (this will also clean references on JobOffer & Applicant)
+        // Remove all applications of this applicant (from RAM only – OK for demo)
         for (UUID appId : new ArrayList<>(ap.getApplicationIds())) {
             removeApplication(appId);
+        }
+
+        // Remove from DB
+        Applicant managed = em.find(Applicant.class, id);
+        if (managed != null) {
+            em.remove(managed);
         }
 
         return true;
@@ -682,20 +703,25 @@ public class ApplicationState {
         return c;
     }
 
+    @Transactional
     public boolean setCompany(UUID id, Company updated) {
-        Company existing = companies.get(id);
+        Company existing = em.find(Company.class, id);
         if (existing == null) {
             return false;
         }
 
         updated.setId(id);
 
-        // Keep links if caller doesn't send them
         if (updated.getOwnerEmployerId() == null) {
             updated.setOwnerEmployerId(existing.getOwnerEmployerId());
         }
 
-        companies.put(id, updated);
+        // write to DB
+        Company merged = em.merge(updated);
+
+        // update RAM cache
+        companies.put(id, merged);
+
         return true;
     }
 
