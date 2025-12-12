@@ -7,8 +7,9 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 
 import java.net.URI;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.UUID;
 
 /**
  * REST resource pour la gestion des JobOffers.
@@ -21,132 +22,85 @@ public class JobOfferResource {
     @Inject
     private ApplicationState state;
 
-
     // ======================================================
     // GET /job-offers?employerId=...
     // ======================================================
 
+    // GET /job-offers?employerId=...
     @GET
-    public List<JobOffer> all(@QueryParam("employerId") UUID employerId) {
-        var values = state.getAllOffers().values();
+    public List<JobOffer> all(@QueryParam("employerId") String employerIdStr) {
 
-        if (employerId == null) {
-            return new ArrayList<>(values);
+        var all = new java.util.ArrayList<>(state.getAllOffers().values());
+
+        if (employerIdStr == null || employerIdStr.isBlank()) {
+            return all;
         }
 
-        return values.stream()
+        UUID employerId = UUID.fromString(employerIdStr);
+        return all.stream()
                 .filter(o -> employerId.equals(o.getEmployerId()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
-
-    // ======================================================
     // GET /job-offers/{id}
-    // ======================================================
-
     @GET
     @Path("/{id}")
-    public JobOffer get(@PathParam("id") UUID id) {
-        var o = state.getOffer(id);
+    public JobOffer get(@PathParam("id") String idStr) {
+        UUID id = UUID.fromString(idStr);
+        JobOffer o = state.getOffer(id);
         if (o == null) throw new NotFoundException("JobOffer not found");
         return o;
     }
 
-
-    // ======================================================
     // POST /job-offers
-    // ======================================================
-
     @POST
     public Response add(JobOffer offer, @Context UriInfo uriInfo) {
         JobOffer created = state.addOffer(offer);
+
         URI location = uriInfo.getAbsolutePathBuilder()
                 .path(created.getId().toString())
                 .build();
 
         return Response.created(location)
                 .entity(created)
-                .build();   // 201 Created + Location
+                .build();
     }
 
-
-    // ======================================================
     // PUT /job-offers/{id}
-    // Remplace intégralement l'offre (sauf ID)
-    // ======================================================
-
     @PUT
     @Path("/{id}")
-    public JobOffer update(@PathParam("id") UUID id, JobOffer offer) {
+    public JobOffer update(@PathParam("id") String idStr, JobOffer offer) {
+        UUID id = UUID.fromString(idStr);
+
         boolean ok = state.setOffer(id, offer);
         if (!ok) throw new NotFoundException("JobOffer not found");
 
-        JobOffer updated = state.getOffer(id);
-        if (updated == null) throw new NotFoundException("JobOffer not found after update");
-        return updated;
+        return state.getOffer(id);
     }
 
-
-    // ======================================================
     // DELETE /job-offers/{id}
-    // ======================================================
-
     @DELETE
     @Path("/{id}")
-    public Response remove(@PathParam("id") UUID id) {
+    public Response remove(@PathParam("id") String idStr) {
+        UUID id = UUID.fromString(idStr);
+
         boolean removed = state.removeOffer(id);
         if (!removed) throw new NotFoundException("JobOffer not found");
 
-        return Response.noContent().build(); // 204 No Content
+        return Response.noContent().build();
     }
 
-
-    // ======================================================
     // POST /job-offers/{id}/publish/{employerId}
-    // ======================================================
-
     @POST
     @Path("/{id}/publish/{employerId}")
-    public JobOffer publish(@PathParam("id") UUID offerId,
-                            @PathParam("employerId") UUID employerId) {
+    public JobOffer publish(@PathParam("id") String offerIdStr,
+                            @PathParam("employerId") String employerIdStr) {
+
+        UUID offerId = UUID.fromString(offerIdStr);
+        UUID employerId = UUID.fromString(employerIdStr);
+
         try {
             return state.publishOffer(offerId, employerId);
-        } catch (NoSuchElementException ex) {
-            throw new NotFoundException("JobOffer not found");
-        } catch (SecurityException ex) {
-            throw new ForbiddenException(ex.getMessage());
-        }
-    }
-
-
-    // ======================================================
-    // POST /job-offers/{id}/close/{employerId}
-    // ======================================================
-
-    @POST
-    @Path("/{id}/close/{employerId}")
-    public JobOffer close(@PathParam("id") UUID offerId,
-                          @PathParam("employerId") UUID employerId) {
-        try {
-            return state.closeOffer(offerId, employerId);
-        } catch (NoSuchElementException ex) {
-            throw new NotFoundException("JobOffer not found");
-        } catch (SecurityException ex) {
-            throw new ForbiddenException(ex.getMessage());
-        }
-    }
-
-
-    // ======================================================
-    // POST /job-offers/{id}/reopen/{employerId}
-    // ======================================================
-
-    @POST
-    @Path("/{id}/reopen/{employerId}")
-    public JobOffer reopen(@PathParam("id") UUID offerId,
-                           @PathParam("employerId") UUID employerId) {
-        try {
-            return state.reopenOffer(offerId, employerId);
         } catch (NoSuchElementException ex) {
             throw new NotFoundException("JobOffer not found");
         } catch (SecurityException ex) {

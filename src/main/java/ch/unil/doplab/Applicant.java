@@ -1,5 +1,6 @@
 package ch.unil.doplab;
 
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -8,11 +9,22 @@ import java.util.UUID;
  * Représente un Applicant dans JobFinder.
  * Hérite des informations essentielles d'un User et ajoute ses propres données.
  */
+@Entity
+@Table(name = "applicants")
 public class Applicant extends User {
 
+    @Column(length = 255)
     private String contactInfo;        // Email, téléphone, etc.
+    @Column(length = 2000)
     private String descriptionInfo;    // Profil du candidat
+    @Column(length = 1000)
     private String cvInfo;             // CV sous forme de texte ou URL
+    @ElementCollection
+    @CollectionTable(
+            name = "applicant_skills",
+            joinColumns = @JoinColumn(name = "applicant_id")
+    )
+    @Column(name = "skill", length = 100)
     private List<String> skills = new ArrayList<>(); // compétences ESCO
 
     // ======================================================

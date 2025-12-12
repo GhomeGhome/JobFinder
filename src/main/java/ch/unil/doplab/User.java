@@ -16,25 +16,18 @@ public abstract class User {
     // ======================================================
 
     @Id
+    @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    @PrePersist
-    protected void ensureId() {
-        if (id == null) {
-            id = UUID.randomUUID();
-        }
-    }
-
-
-    @Column(nullable = false,  unique = true)
+    @Column(name = "username", nullable = false, unique = true, length = 100)
     private String username;     // unique
-    @Column(nullable = false)
+    @Column(name = "password", length = 255)
     private String password;
-    @Column(nullable = false)
+    @Column(name = "first_name", length = 100)
     private String firstName;
-    @Column(nullable = false)
+    @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", length = 255)
     private String email;
 
     // Un User peut être lié à plusieurs JobOffers (Employeur)
@@ -68,6 +61,12 @@ public abstract class User {
         this(null, username, password, firstName, lastName, email);
     }
 
+    @PrePersist
+    protected void ensureId() {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
+    }
 
     // ======================================================
     // GETTERS / SETTERS
