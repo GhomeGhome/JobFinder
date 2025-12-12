@@ -37,6 +37,15 @@
                         <span class="status-badge">#{offer.status}</span>
                     </h:column>
 
+                    <h:column>
+                        <f:facet name="header">Actions</f:facet>
+                        <h:link outcome="/applicantJobDetails.xhtml"
+                                value="View / Apply"
+                                styleClass="link-action">
+                            <f:param name="jobId" value="#{offer.id}" />
+                        </h:link>
+                    </h:column>
+
                 </h:dataTable>
             </h:form>
         </div>

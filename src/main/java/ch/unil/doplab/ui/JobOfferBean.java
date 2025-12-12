@@ -5,11 +5,14 @@ import ch.unil.doplab.Employer;
 import ch.unil.doplab.JobOffer;
 import ch.unil.doplab.client.JobFinderClient; // NEW IMPORT
 // import ch.unil.doplab.service.domain.ApplicationState; // COMMENTED OUT
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,6 +34,7 @@ public class JobOfferBean {
 
     private String statusFilter;
 
+    private List<Map<String, Object>> externalJobs = Collections.emptyList();
     // Show all offers (no filter)
     public List<JobOffer> getAllOffers() {
         /* OLD CODE:
@@ -108,6 +112,35 @@ public class JobOfferBean {
         // NEW CODE: Use the specialized method we added to the Client
         return client.getOffersByEmployer(employerId);
     }
+
+    public void loadExternalJobs() {
+        try {
+            // use same search keyword as internal search
+            String q = (searchKeyword == null) ? "" : searchKeyword.trim();
+            // e.g. 5 results
+            externalJobs = client.searchRemoteOk(q, 5);
+        } catch (Exception e) {
+            e.printStackTrace();
+            externalJobs = Collections.emptyList();
+        }
+    }
+
+    // call this from init() or from your existing refresh method
+    @PostConstruct
+    public void init() {
+        // your current logic to load offers
+        // ...
+        loadExternalJobs();
+    }
+
+    // getter
+    public List<Map<String, Object>> getExternalJobs() {
+        if (externalJobs == null) {
+            externalJobs = Collections.emptyList();
+        }
+        return externalJobs;
+    }
+
 
     public String companyName(JobOffer offer) {
         UUID companyId = offer.getCompanyId();

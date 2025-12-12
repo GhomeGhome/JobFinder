@@ -17,6 +17,7 @@ import jakarta.ws.rs.client.Entity;
 
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -51,6 +52,34 @@ public class JobFinderClient {
         return client.target(BASE_URL + "/job-offers/" + id)
                 .request(MediaType.APPLICATION_JSON)
                 .get(JobOffer.class);
+    }
+
+    public JobOffer createJobOffer(JobOffer offer) {
+        Response response = null;
+        try {
+            response = target.path("job-offers")
+                    .request(MediaType.APPLICATION_JSON)
+                    .post(Entity.json(offer));
+
+            int status = response.getStatus();
+            System.out.println("POST /job-offers status = " + status);
+
+            if (status >= 200 && status < 300) {
+                return response.readEntity(JobOffer.class);
+            } else {
+                String body = "";
+                try {
+                    body = response.readEntity(String.class);
+                } catch (Exception ignored) {}
+                System.err.println("Error creating job offer: " + status + " body=" + body);
+                return null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (response != null) response.close();
+        }
     }
 
     // ==========================================
@@ -103,6 +132,19 @@ public class JobFinderClient {
                 .get(Applicant.class);
     }
 
+    public Application updateApplicationMatchScore(UUID applicationId, double score) {
+        return client.target(BASE_URL + "/applications/" + applicationId + "/match-score")
+                .request(MediaType.APPLICATION_JSON)
+                .put(Entity.json(Map.of("matchScore", score)), Application.class);
+    }
+
+    public void recomputeMatchScoresForApplicant(UUID applicantId) {
+        client.target(BASE_URL + "/applications/recompute/by-applicant/" + applicantId)
+                .request(MediaType.APPLICATION_JSON)
+                .post(Entity.json(""));
+    }
+
+
     // ==========================================
     // APPLICATIONS
     // ==========================================
@@ -111,6 +153,33 @@ public class JobFinderClient {
         return client.target(BASE_URL + "/applications")
                 .request(MediaType.APPLICATION_JSON)
                 .get(new GenericType<List<Application>>() {});
+    }
+
+    public boolean createApplication(Application app) {
+        Response response = null;
+        try {
+            response = target.path("applications")
+                    .request(MediaType.APPLICATION_JSON)
+                    .post(Entity.json(app));
+
+            int status = response.getStatus();
+            System.out.println("POST /applications status = " + status);
+            String body = "";
+            try {
+                body = response.readEntity(String.class);
+            } catch (Exception ignored) {}
+            System.out.println("POST /applications body = " + body);
+
+            // consider any 2xx as success
+            return status >= 200 && status < 300;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+        }
     }
 
     public void updateApplicationStatus(UUID applicationId, String status) {
@@ -167,4 +236,28 @@ public class JobFinderClient {
             return false;
         }
     }
+
+    // ===== EXTERNAL APIS =====
+
+    public List<Map<String, Object>> searchRemoteOk(String keyword, int limit) {
+        return client.target(BASE_URL + "/external/remoteok")
+                .queryParam("keyword", keyword)
+                .queryParam("limit", limit)
+                .request(MediaType.APPLICATION_JSON)
+                .get(new GenericType<List<Map<String, Object>>>() {});
+    }
+
+    public List<Map<String, Object>> suggestSkills(String q,
+                                                   String type,
+                                                   int limit,
+                                                   String lang) {
+        return client.target(BASE_URL + "/skills/suggest")
+                .queryParam("q", q)
+                .queryParam("type", type)
+                .queryParam("limit", limit)
+                .queryParam("lang", lang)
+                .request(MediaType.APPLICATION_JSON)
+                .get(new GenericType<List<Map<String, Object>>>() {});
+    }
+
 }

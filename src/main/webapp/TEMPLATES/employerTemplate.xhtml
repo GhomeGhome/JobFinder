@@ -28,9 +28,12 @@
                             value="Job posts"
                             styleClass="top-link #{view.viewId eq '/employerDashBoard.xhtml' ? 'top-link-active' : ''}" />
 
-                    <h:link outcome="/employerApplications.xhtml"
-                            value="Applications"
-                            styleClass="top-link #{view.viewId eq '/employerApplications.xhtml' ? 'top-link-active' : ''}" />
+                    <h:form styleClass="top-bar-form" prependId="false">
+                        <h:commandLink value="Applications"
+                                       action="#{applicationBean.clearJobFilter}"
+                                       styleClass="top-link #{view.viewId eq '/employerApplications.xhtml' ? 'top-link-active' : ''}" />
+                    </h:form>
+
 
                     <h:link outcome="/employerInterviews.xhtml"
                             value="Interviews"
@@ -53,10 +56,11 @@
     </span>
 
                 <!-- Optional: show switch only if user is also applicant -->
-                <h:link outcome="/applicantDashboard.xhtml"
+                <h:link outcome="/applicantJobs.xhtml"
                         value="Applicant view"
                         styleClass="top-link"
                         rendered="#{loginBean.isApplicant()}" />
+
 
                 <h:form styleClass="top-bar-form">
                     <h:commandButton value="Logout"

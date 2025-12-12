@@ -74,12 +74,23 @@
 
                 <h:column>
                     <f:facet name="header">Match score</f:facet>
-                    #{a.matchScore != null ? a.matchScore : 0.0} %
+
+                    <h:panelGroup rendered="#{not empty a.matchScore}">
+                        <h:outputText value="#{a.matchScore}">
+                            <f:convertNumber maxFractionDigits="1" minFractionDigits="1" />
+                        </h:outputText>
+                        %
+                    </h:panelGroup>
+
+                    <h:panelGroup rendered="#{empty a.matchScore}">
+                        N/A
+                    </h:panelGroup>
                 </h:column>
+
 
                 <h:column>
                     <f:facet name="header">Date</f:facet>
-                    #{a.submittedAt.toLocalDate()}
+                    #{a.dateApplied}
                 </h:column>
 
             </h:dataTable>

@@ -4,6 +4,10 @@
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
                 template="/TEMPLATES/applicantTemplate.xhtml">
 
+    <f:metadata>
+        <f:viewAction action="#{skillBean.syncFromApplicant}" />
+    </f:metadata>
+
     <ui:define name="title">
         Jobs – JobFinder
     </ui:define>
@@ -57,11 +61,58 @@
 
                         <h:column>
                             <f:facet name="header">Actions</f:facet>
-                            <h:commandLink value="View / Apply"
-                                           action="#{jobOfferBean.viewOffer(offer.id)}" />
+                            <h:link outcome="/applicantJobDetails.xhtml"
+                                    value="View / Apply"
+                                    styleClass="link-action">
+                                <f:param name="jobId" value="#{offer.id}" />
+                            </h:link>
                         </h:column>
 
+
                     </h:dataTable>
+                    <h:form>
+
+                        <!-- existing search + internal offers table here -->
+
+                        <!-- ===================== -->
+                        <!-- RemoteOK external jobs -->
+                        <!-- ===================== -->
+                        <h3 style="margin-top:32px;">Remote jobs (RemoteOK)</h3>
+                        <p class="page-subtitle">
+                            External remote jobs matching your search.
+                        </p>
+
+                        <h:dataTable value="#{jobOfferBean.externalJobs}"
+                                     var="r"
+                                     styleClass="job-table">
+
+                            <h:column>
+                                <f:facet name="header">Title</f:facet>
+                                #{r['title']}
+                            </h:column>
+
+                            <h:column>
+                                <f:facet name="header">Company</f:facet>
+                                #{r['company']}
+                            </h:column>
+
+                            <h:column>
+                                <f:facet name="header">Tags</f:facet>
+                                <!-- r['tags'] is a List, we just render its toString() -->
+                                #{r['tags']}
+                            </h:column>
+
+                            <h:column>
+                                <f:facet name="header">Link</f:facet>
+                                <h:outputLink value="#{r['url']}" target="_blank" styleClass="link-action">
+                                    View job
+                                </h:outputLink>
+                            </h:column>
+
+                        </h:dataTable>
+
+                    </h:form>
+
                 </div>
 
             </h:form>

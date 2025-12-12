@@ -11,9 +11,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Path("/applications")
 @Produces(MediaType.APPLICATION_JSON)
@@ -80,18 +78,18 @@ public class ApplicationResource {
     public Response add(Application a, @Context UriInfo uri) {
 
         // Optional but nice: validate that JobOffer & Applicant exist
-        UUID jobOfferId = a.getJobOfferId();
-        UUID applicantId = a.getApplicantId();
-
-        JobOffer offer = state.getOffer(jobOfferId);
-        if (offer == null) {
-            throw new BadRequestException("Invalid jobOfferId: " + jobOfferId);
-        }
-
-        Applicant ap = state.getApplicant(applicantId);
-        if (ap == null) {
-            throw new BadRequestException("Invalid applicantId: " + applicantId);
-        }
+//        UUID jobOfferId = a.getJobOfferId();
+//        UUID applicantId = a.getApplicantId();
+//
+//        JobOffer offer = state.getOffer(jobOfferId);
+//        if (offer == null) {
+//            throw new BadRequestException("Invalid jobOfferId: " + jobOfferId);
+//        }
+//
+//        Applicant ap = state.getApplicant(applicantId);
+//        if (ap == null) {
+//            throw new BadRequestException("Invalid applicantId: " + applicantId);
+//        }
 
         Application created = state.addApplication(a);
 
@@ -101,6 +99,78 @@ public class ApplicationResource {
 
         return Response.created(location).entity(created).build();
     }
+
+    @PUT
+    @Path("/{id}/match-score")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Application updateMatchScore(@PathParam("id") UUID id, Map<String, Object> body) {
+        Object raw = body.get("matchScore");
+        if (raw == null) throw new BadRequestException("matchScore is required");
+
+        double score = ((Number) raw).doubleValue();
+        return state.updateApplicationMatchScore(id, score);
+    }
+
+    @POST
+    @Path("/recompute/by-applicant/{applicantId}")
+    public Response recomputeForApplicant(@PathParam("applicantId") String applicantIdStr) {
+        UUID applicantId = UUID.fromString(applicantIdStr);
+
+        Applicant applicant = state.getApplicant(applicantId);
+        if (applicant == null) throw new NotFoundException("Applicant not found");
+
+        // all applications of this applicant
+        List<Application> apps = state.getAllApplications().values().stream()
+                .filter(a -> applicantId.equals(a.getApplicantId()))
+                .toList();
+
+        int updated = 0;
+
+        for (Application app : apps) {
+            JobOffer offer = state.getOffer(app.getJobOfferId());
+            if (offer == null) continue;
+
+            double score = computeMatchScore(applicant, offer);
+            state.updateApplicationMatchScore(app.getId(), score);
+            updated++;
+        }
+
+        return Response.ok(Map.of("updated", updated)).build();
+    }
+
+    /** Copy the same tokenize/compute you already wrote */
+    private static Set<String> tokenize(String text) {
+        if (text == null) return java.util.Collections.emptySet();
+        String[] raw = text.toLowerCase().split("[^a-z0-9+]+");
+        Set<String> tokens = new java.util.HashSet<>();
+        for (String t : raw) {
+            t = t.trim();
+            if (t.length() >= 2) tokens.add(t);
+        }
+        return tokens;
+    }
+
+    private double computeMatchScore(Applicant applicant, JobOffer offer) {
+        String skillsStr = applicant.getSkillsAsString();
+        Set<String> skillTokens = tokenize(skillsStr);
+        if (skillTokens.isEmpty()) return 0.0;
+
+        StringBuilder jobText = new StringBuilder();
+        if (offer.getTitle() != null) jobText.append(offer.getTitle()).append(" ");
+        if (offer.getDescription() != null) jobText.append(offer.getDescription());
+
+        Set<String> jobTokens = tokenize(jobText.toString());
+        if (jobTokens.isEmpty()) return 0.0;
+
+        int matches = 0;
+        for (String s : skillTokens) {
+            if (jobTokens.contains(s)) matches++;
+        }
+
+        double raw = (matches * 100.0) / skillTokens.size();
+        return Math.round(raw * 10.0) / 10.0;
+    }
+
 
     // ======================================================
     // PUT /applications/{id}

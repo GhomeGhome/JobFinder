@@ -1,0 +1,127 @@
+package ch.unil.doplab.ui;
+
+import ch.unil.doplab.Company;
+import ch.unil.doplab.Employer;
+import ch.unil.doplab.JobOffer;
+import ch.unil.doplab.JobOfferStatus;
+import ch.unil.doplab.client.JobFinderClient;
+import jakarta.annotation.PostConstruct;
+import jakarta.faces.application.FacesMessage;
+import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.ViewScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+
+import java.io.Serializable;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Named("employerJobFormBean")
+@ViewScoped
+public class EmployerJobFormBean implements Serializable {
+
+    @Inject
+    private JobFinderClient client;
+
+    @Inject
+    private LoginBean loginBean;
+
+    private JobOffer jobOffer = new JobOffer();
+    private List<Company> availableCompanies;
+    private String selectedCompanyId;   // binds to <selectOneMenu>
+    private String statusString = "Draft"; // default
+
+    @PostConstruct
+    public void init() {
+        // Ensure we are logged as employer
+        if (!loginBean.isEmployer() || loginBean.getLoggedEmployer() == null) {
+            // If not, nothing to init (you might redirect in a real app)
+            return;
+        }
+
+        Employer emp = loginBean.getLoggedEmployer();
+        UUID empId = emp.getId();
+
+        // Load only companies owned by this employer
+        List<Company> all = client.getAllCompanies();
+        availableCompanies = all.stream()
+                .filter(c -> empId.equals(c.getOwnerEmployerId()))
+                .collect(Collectors.toList());
+    }
+
+    public String save() {
+        if (!loginBean.isEmployer() || loginBean.getLoggedEmployer() == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                            "You must be logged in as an employer.", null));
+            return null;
+        }
+
+        Employer emp = loginBean.getLoggedEmployer();
+
+        // set employer on offer
+        jobOffer.setEmployerId(emp.getId());
+
+        // set company if selected
+        if (selectedCompanyId != null && !selectedCompanyId.isBlank()) {
+            jobOffer.setCompanyId(UUID.fromString(selectedCompanyId));
+        } else {
+            jobOffer.setCompanyId(null);
+        }
+
+        // set status from dropdown
+        try {
+            JobOfferStatus st = JobOfferStatus.valueOf(statusString);
+            jobOffer.setStatus(st);
+        } catch (IllegalArgumentException ex) {
+            jobOffer.setStatus(JobOfferStatus.Draft);
+        }
+
+        // Call REST
+        JobOffer created = client.createJobOffer(jobOffer);
+        if (created == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                            "Could not create job offer.", null));
+            return null;
+        }
+
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO,
+                        "Job offer created successfully.", null));
+
+        // Redirect to employer job posts page
+        return "/employerJobOffers.xhtml?faces-redirect=true";
+    }
+
+    // ========== Getters / setters ==========
+
+    public JobOffer getJobOffer() {
+        return jobOffer;
+    }
+
+    public void setJobOffer(JobOffer jobOffer) {
+        this.jobOffer = jobOffer;
+    }
+
+    public List<Company> getAvailableCompanies() {
+        return availableCompanies;
+    }
+
+    public String getSelectedCompanyId() {
+        return selectedCompanyId;
+    }
+
+    public void setSelectedCompanyId(String selectedCompanyId) {
+        this.selectedCompanyId = selectedCompanyId;
+    }
+
+    public String getStatusString() {
+        return statusString;
+    }
+
+    public void setStatusString(String statusString) {
+        this.statusString = statusString;
+    }
+}

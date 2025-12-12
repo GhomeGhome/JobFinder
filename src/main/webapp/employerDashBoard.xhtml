@@ -14,12 +14,16 @@
     <ui:define name="content">
 
         <div class="page-header">
-            <h1>Employer view – Job posts</h1>
+            <h1>Your job posts</h1>
             <p class="page-subtitle">
-                Manage all your job posts (drafts, published, closed).
+                Manage the job offers you have published.
             </p>
+            <div style="margin-top:16px;">
+                <h:link outcome="/employerJobNew.xhtml"
+                        value="+ New job post"
+                        styleClass="btn btn-primary" />
+            </div>
         </div>
-
         <div class="card">
             <h:form>
 
@@ -63,11 +67,10 @@
                         <!-- Actions column from step 1 -->
                         <h:column>
                             <f:facet name="header">Actions</f:facet>
-                            <h:link value="View applicants"
-                                    outcome="employerApplications"
-                                    styleClass="link-action">
-                                <f:param name="jobId" value="#{offer.id}" />
-                            </h:link>
+
+                            <h:commandLink value="View applicants"
+                                           action="#{applicationBean.openApplicationsForJob(offer.id)}"
+                                           styleClass="link-action" />
                         </h:column>
 
                     </h:dataTable>

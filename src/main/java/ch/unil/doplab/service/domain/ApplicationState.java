@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
-
+import jakarta.ws.rs.NotFoundException;
 
 
 /**
@@ -862,31 +862,55 @@ public class ApplicationState {
     // ======================================================
 
     @Transactional
-    public Application addApplication(Application app) {
-        if (app == null) throw new IllegalArgumentException("Application cannot be null.");
+    public Application addApplication(Application a) {
+        // basic sanity
+        if (a.getJobOfferId() == null || a.getApplicantId() == null) {
+            throw new IllegalArgumentException("jobOfferId and applicantId are required");
+        }
 
-        UUID id = app.getId() != null ? app.getId() : UUID.randomUUID();
-        app.setId(id);
+        JobOffer offer = jobOffers.get(a.getJobOfferId());
+        Applicant applicant = applicants.get(a.getApplicantId());
 
-        // Valeurs par défaut
-        if (app.getStatus() == null) app.setStatus(ApplicationStatus.Submitted);
-        if (app.getSubmittedAt() == null) app.setSubmittedAt(LocalDateTime.now());
-        if (app.getUpdatedAt() == null) app.setUpdatedAt(app.getSubmittedAt());
+        if (offer == null) {
+            throw new IllegalArgumentException("Unknown JobOffer: " + a.getJobOfferId());
+        }
+        if (applicant == null) {
+            throw new IllegalArgumentException("Unknown Applicant: " + a.getApplicantId());
+        }
 
-        applications.put(id, app);
+        // ID + dates are taken care of by @PrePersist in Application,
+        // but we still make sure there is an ID for the in-memory map:
+        if (a.getId() == null) {
+            a.setId(UUID.randomUUID());
+        }
 
-        // Lier au JobOffer
-        JobOffer offer = jobOffers.get(app.getJobOfferId());
-        if (offer != null) offer.addApplicationId(id);
+        // Only compute match score if not pre-set (seed data keeps its hard-coded scores)
+        if (a.getMatchScore() == null) {
+            double score = computeMatchScore(applicant, offer);
+            a.setMatchScore(score);
+        }
 
-        // Lier à l'Applicant
-        Applicant applicant = applicants.get(app.getApplicantId());
-        if (applicant != null) applicant.addApplicationId(id);
+        // Maintain in-memory maps
+        applications.put(a.getId(), a);
+        offer.addApplicationId(a.getId());
+        applicant.addApplicationId(a.getId());
 
-        em.persist(app);
+        // Persist in DB
+        em.persist(a);
 
-        return app;
+        return a;
     }
+
+    @Transactional
+    public Application updateApplicationMatchScore(UUID id, double score) {
+        Application a = em.find(Application.class, id);
+        if (a == null) throw new NotFoundException("Application not found: " + id);
+
+        a.setMatchScore(score);
+        // updatedAt will be set by @PreUpdate
+        return a;
+    }
+
 
     public boolean removeApplication(UUID id) {
         Application a = applications.remove(id);
@@ -1001,7 +1025,61 @@ public class ApplicationState {
         Company c = companies.get(offer.getCompanyId());
         return (c != null) ? c.getName() : "Unknown";
     }
-@Transactional
+
+    // -----------------------------
+// Matching helpers
+// -----------------------------
+    private static Set<String> tokenize(String text) {
+        if (text == null) return Collections.emptySet();
+
+        String[] raw = text
+                .toLowerCase()
+                .split("[^a-z0-9+]+");  // split on non-alphanum (+ keeps C++/C# kind of stuff)
+
+        Set<String> tokens = new HashSet<>();
+        for (String t : raw) {
+            t = t.trim();
+            if (t.length() >= 2) {
+                tokens.add(t);
+            }
+        }
+        return tokens;
+    }
+
+    private double computeMatchScore(Applicant applicant, JobOffer offer) {
+        // 1) Applicant skills (from profile)
+        String skillsStr = applicant.getSkillsAsString();
+        Set<String> skillTokens = tokenize(skillsStr);
+
+        if (skillTokens.isEmpty()) {
+            return 0.0; // no skills = 0%
+        }
+
+        // 2) Job keywords (title + description for now)
+        StringBuilder jobText = new StringBuilder();
+        if (offer.getTitle() != null) jobText.append(offer.getTitle()).append(" ");
+        if (offer.getDescription() != null) jobText.append(offer.getDescription());
+
+        Set<String> jobTokens = tokenize(jobText.toString());
+
+        if (jobTokens.isEmpty()) {
+            return 0.0;
+        }
+
+        // 3) Overlap between applicant skills and job tokens
+        int matches = 0;
+        for (String s : skillTokens) {
+            if (jobTokens.contains(s)) {
+                matches++;
+            }
+        }
+
+        double raw = (matches * 100.0) / skillTokens.size();
+        // one decimal, e.g. 83.3
+        return Math.round(raw * 10.0) / 10.0;
+    }
+
+    @Transactional
 public void clearDB() {
     // clear RAM first
     clearObjects();

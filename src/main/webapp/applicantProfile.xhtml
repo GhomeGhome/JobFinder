@@ -30,11 +30,71 @@
                                  placeholder="Paste image link (https://...)" />
                 </div>
 
+                <f:metadata>
+                    <f:viewAction action="#{skillBean.syncFromApplicant}" />
+                </f:metadata>
+
+
                 <h:link outcome="/applicantProfileView.xhtml" styleClass="btn btn-light btn-full">
                     <f:param name="id" value="#{loginBean.loggedApplicant.id}" />
                     👁️ View Public Profile
                 </h:link>
             </div>
+
+            <h3 style="margin-top:24px;">Skills (ESCO)</h3>
+
+            <h:form id="skillForm">
+
+                <!-- Search box with live suggestions -->
+                <div class="field">
+                    <span class="field-label">Search skills</span>
+                    <h:inputText value="#{skillBean.query}"
+                                 styleClass="input-full"
+                                 id="skillQuery">
+                        <f:ajax event="keyup"
+                                listener="#{skillBean.refreshSuggestions}"
+                                render="suggestionsPanel" />
+                    </h:inputText>
+                </div>
+
+                <!-- Suggestions list -->
+                <h:panelGroup id="suggestionsPanel">
+                    <ui:fragment rendered="#{not empty skillBean.suggestions}">
+                        <ul class="suggestions-list">
+                            <ui:repeat value="#{skillBean.suggestions}" var="s">
+                                <li>
+                                    #{s['label']}
+                                    <h:commandLink value="Add"
+                                                   style="margin-left:8px;"
+                                                   action="#{skillBean.addSkill(s)}">
+                                        <f:ajax render="selectedSkillsPanel" />
+                                    </h:commandLink>
+                                </li>
+                            </ui:repeat>
+                        </ul>
+                    </ui:fragment>
+                </h:panelGroup>
+
+                <!-- Selected skills as chips -->
+                <h:panelGroup id="selectedSkillsPanel">
+                    <ui:fragment rendered="#{not empty skillBean.selectedSkills}">
+                        <div class="chip-container">
+                            <ui:repeat value="#{skillBean.selectedSkills}" var="s">
+                    <span class="chip">
+                        #{s['label']}
+                        <h:commandLink value="×"
+                                       action="#{skillBean.removeSkill(s)}"
+                                       style="margin-left:4px;">
+                            <f:ajax render="selectedSkillsPanel" />
+                        </h:commandLink>
+                    </span>
+                            </ui:repeat>
+                        </div>
+                    </ui:fragment>
+                </h:panelGroup>
+
+            </h:form>
+
 
             <div class="card" style="flex-grow: 1; min-width: 300px;">
                 <h:form>

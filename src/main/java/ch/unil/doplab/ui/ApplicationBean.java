@@ -5,15 +5,14 @@ import ch.unil.doplab.Applicant;
 import ch.unil.doplab.JobOffer;
 import ch.unil.doplab.Employer;
 import ch.unil.doplab.client.JobFinderClient;
-// import ch.unil.doplab.service.domain.ApplicationState; // REMOVED
+
+import java.util.*;
+import java.util.ArrayList;
 
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Named("applicationBean")
@@ -69,27 +68,38 @@ public class ApplicationBean implements Serializable {
         // 1. Fetch EVERYTHING from server
         List<Application> allApps = client.getAllApplications();
 
-        // 2. Filter in memory
-        return allApps.stream()
-                .filter(app -> {
-                    // Fetch the job for this application to check ownership
-                    JobOffer offer = client.getJobOffer(app.getJobOfferId());
+        List<Application> result = new ArrayList<>();
 
-                    if (offer == null) return false; // Orphaned application
+        for (Application app : allApps) {
+            // Fetch the job for this application to check ownership
+            JobOffer offer = client.getJobOffer(app.getJobOfferId());
+            if (offer == null) continue; // Orphaned application
 
-                    // CHECK A: Is this job owned by the logged-in employer?
-                    if (!employerId.equals(offer.getEmployerId())) {
-                        return false;
-                    }
+            // CHECK A: Is this job owned by the logged-in employer?
+            if (!employerId.equals(offer.getEmployerId())) {
+                continue;
+            }
 
-                    // CHECK B: Are we filtering by a specific job ID?
-                    if (filterJobOfferId != null && !filterJobOfferId.equals(offer.getId())) {
-                        return false;
-                    }
+            // CHECK B: Are we filtering by a specific job ID?
+            if (filterJobOfferId != null && !filterJobOfferId.equals(offer.getId())) {
+                continue;
+            }
 
-                    return true;
-                })
-                .collect(Collectors.toList());
+            // --- compute + persist match score if missing ---
+            if (app.getMatchScore() == null) {
+                Applicant applicant = client.getApplicant(app.getApplicantId());
+                if (applicant != null) {
+                    double score = computeMatchScore(applicant, offer);
+
+                    app.setMatchScore(score); // UI immediate
+//                    client.updateApplicationMatchScore(app.getId(), score); // save to DB/API
+                }
+            }
+
+            result.add(app);
+        }
+
+        return result;
     }
 
     // --- Helpers for UI ---
@@ -107,6 +117,57 @@ public class ApplicationBean implements Serializable {
                 ? applicant.getFirstName() + " " + applicant.getLastName()
                 : "User Removed";
     }
+
+    // -----------------------------
+// Matching helpers (UI fallback)
+// -----------------------------
+    private static Set<String> tokenize(String text) {
+        if (text == null) return Collections.emptySet();
+
+        String[] raw = text
+                .toLowerCase()
+                .split("[^a-z0-9+]+");
+
+        Set<String> tokens = new HashSet<>();
+        for (String t : raw) {
+            t = t.trim();
+            if (t.length() >= 2) {
+                tokens.add(t);
+            }
+        }
+        return tokens;
+    }
+
+    private double computeMatchScore(Applicant applicant, JobOffer offer) {
+        if (applicant == null || offer == null) return 0.0;
+
+        String skillsStr = applicant.getSkillsAsString();
+        Set<String> skillTokens = tokenize(skillsStr);
+
+        if (skillTokens.isEmpty()) {
+            return 0.0;
+        }
+
+        StringBuilder jobText = new StringBuilder();
+        if (offer.getTitle() != null) jobText.append(offer.getTitle()).append(" ");
+        if (offer.getDescription() != null) jobText.append(offer.getDescription());
+
+        Set<String> jobTokens = tokenize(jobText.toString());
+        if (jobTokens.isEmpty()) {
+            return 0.0;
+        }
+
+        int matches = 0;
+        for (String s : skillTokens) {
+            if (jobTokens.contains(s)) {
+                matches++;
+            }
+        }
+
+        double raw = (matches * 100.0) / skillTokens.size();
+        return Math.round(raw * 10.0) / 10.0;   // e.g. 83.3
+    }
+
 
     // --- Getters/Setters ---
 

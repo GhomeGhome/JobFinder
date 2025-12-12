@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                template="/TEMPLATES/applicantTemplate.xhtml">
+
+    <ui:define name="title">Job details – JobFinder</ui:define>
+
+    <f:metadata>
+        <f:viewParam name="jobId" value="#{applicationViewBean.jobId}" />
+        <f:viewAction action="#{applicationViewBean.init}" />
+    </f:metadata>
+
+    <ui:define name="content">
+
+        <!-- If job not found -->
+        <h:panelGroup rendered="#{empty applicationViewBean.offer}">
+            <div class="card">
+                <p>Job not found.</p>
+                <h:link outcome="/applicantJobs.xhtml"
+                        value="← Back to jobs"
+                        styleClass="btn-link" />
+            </div>
+        </h:panelGroup>
+
+        <!-- Normal view -->
+        <h:panelGroup rendered="#{not empty applicationViewBean.offer}">
+            <div class="page-header">
+                <h1>#{applicationViewBean.offer.title}</h1>
+                <p class="page-subtitle">
+                    #{applicationViewBean.company != null ? applicationViewBean.company.name : 'Unknown company'}
+                    · #{applicationViewBean.company != null ? applicationViewBean.company.location : ''}
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>Description</h3>
+                <p>#{applicationViewBean.offer.description}</p>
+
+                <h3 style="margin-top: 24px;">Status</h3>
+                <span class="status-badge">#{applicationViewBean.offer.status}</span>
+
+                <div style="margin-top: 32px; display: flex; gap: 16px; align-items: center;">
+                    <h:form>
+                        <h:commandButton value="Apply now"
+                                         action="#{applicationViewBean.apply}"
+                                         styleClass="btn btn-primary"
+                                         disabled="#{applicationViewBean.alreadyApplied}" />
+                        <h:messages styleClass="form-messages" />
+                    </h:form>
+
+                    <h:link outcome="/applicantJobs.xhtml"
+                            value="Back to job list"
+                            styleClass="btn btn-light" />
+                </div>
+
+                <h:panelGroup rendered="#{applicationViewBean.alreadyApplied}">
+                    <p style="margin-top: 12px; color: #16a34a;">
+                        ✅ You have already applied to this job.
+                    </p>
+                </h:panelGroup>
+            </div>
+        </h:panelGroup>
+
+    </ui:define>
+</ui:composition>

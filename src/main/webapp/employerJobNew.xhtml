@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                template="/TEMPLATES/employerTemplate.xhtml">
+
+    <ui:define name="title">
+        New Job Post – JobFinder
+    </ui:define>
+
+    <ui:define name="content">
+
+        <div class="page-header">
+            <h1>Create a new job post</h1>
+            <p class="page-subtitle">
+                Publish a new job offer for your company.
+            </p>
+        </div>
+
+        <div class="card" style="max-width: 720px;">
+            <h:form>
+                <h:messages styleClass="form-messages" />
+
+                <!-- Title -->
+                <div class="field">
+                    <span class="field-label">Job title</span>
+                    <h:inputText value="#{employerJobFormBean.jobOffer.title}"
+                                 styleClass="input-full"
+                                 required="true" />
+                </div>
+
+                <!-- Company -->
+                <div class="field">
+                    <span class="field-label">Company</span>
+                    <h:selectOneMenu value="#{employerJobFormBean.selectedCompanyId}"
+                                     styleClass="input-full">
+                        <f:selectItem itemLabel="Select a company…" itemValue="" />
+                        <f:selectItems value="#{employerJobFormBean.availableCompanies}"
+                                       var="c"
+                                       itemLabel="#{c.name}"
+                                       itemValue="#{c.id}" />
+                    </h:selectOneMenu>
+                    <small style="color:#6b7280;">
+                        Only companies you own are listed here.
+                    </small>
+                </div>
+
+                <!-- Status -->
+                <div class="field">
+                    <span class="field-label">Status</span>
+                    <h:selectOneMenu value="#{employerJobFormBean.statusString}"
+                                     styleClass="input-full">
+                        <f:selectItem itemLabel="Draft" itemValue="Draft" />
+                        <f:selectItem itemLabel="Published" itemValue="Published" />
+                        <f:selectItem itemLabel="Closed" itemValue="Closed" />
+                    </h:selectOneMenu>
+                </div>
+
+                <!-- Description -->
+                <div class="field">
+                    <span class="field-label">Description</span>
+                    <h:inputTextarea value="#{employerJobFormBean.jobOffer.description}"
+                                     styleClass="input-full"
+                                     rows="5"
+                                     required="true" />
+                </div>
+
+                <!-- Later we can add required skills here (ESCO / free text) -->
+
+                <div style="margin-top: 24px; display:flex; gap:16px;">
+                    <h:commandButton value="Create job"
+                                     action="#{employerJobFormBean.save}"
+                                     styleClass="btn btn-primary" />
+
+                    <h:link outcome="/employerJobOffers.xhtml"
+                            value="Cancel"
+                            styleClass="btn btn-light" />
+                </div>
+            </h:form>
+        </div>
+
+    </ui:define>
+</ui:composition>

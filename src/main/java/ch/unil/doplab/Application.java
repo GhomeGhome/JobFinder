@@ -1,6 +1,7 @@
 package ch.unil.doplab;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import jakarta.persistence.*;
 
@@ -80,11 +81,6 @@ public class Application {
         this.matchScore = matchScore;
     }
 
-    public String getDateApplied() {
-        return this.updatedAt.toString();
-    }
-
-
     // ======================================================
     // JPA LIFECYCLE
     // ======================================================
@@ -151,6 +147,18 @@ public class Application {
     // ======================================================
     // MÉTHODES UTILITAIRES
     // ======================================================
+
+    private static final DateTimeFormatter DISPLAY_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+    // e.g. 12.12.2025 16:34
+
+    public String getDateApplied() {
+        // choose which date to show
+        LocalDateTime base = (submittedAt != null) ? submittedAt : updatedAt;
+        if (base == null) {
+            return "";
+        }
+        return base.format(DISPLAY_FORMAT);
+    }
 
     public void markUpdated() {
         this.updatedAt = LocalDateTime.now();
