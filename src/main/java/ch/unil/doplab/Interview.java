@@ -1,19 +1,42 @@
 package ch.unil.doplab;
 
+import jakarta.persistence.*;
 import java.util.Date;
 
+@Entity
+@Table(name = "interviews")
 public class Interview {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto-increment Long
     private Long id;
+
+    // Many interviews belong to one job offer
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "job_offer_id", nullable = false)
     private JobOffer jobOffer;
+
+    // Many interviews belong to one applicant
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "applicant_id", nullable = false)
     private Applicant applicant;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "scheduled_at", nullable = false)
     private Date scheduledAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mode", length = 20, nullable = false)
     private InterviewMode mode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20, nullable = false)
     private InterviewStatus status;
+
+    @Column(name = "location_or_link", length = 1000)
     private String locationOrLink;
 
-    public Interview() {
-    }
+    public Interview() {}
 
     public Interview(Long id,
                      JobOffer jobOffer,

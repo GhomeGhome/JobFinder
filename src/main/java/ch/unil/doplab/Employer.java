@@ -1,14 +1,20 @@
 package ch.unil.doplab;
 
+import jakarta.persistence.*;
+
 import java.util.UUID;
 
 /**
  * Représente un employeur dans JobFinder.
  * Il hérite de User et ajoute des informations propres à l'entreprise.
  */
+@Entity
+@Table(name = "employers")
 public class Employer extends User {
 
+    @Column(length = 255)
     private String enterpriseName;
+    @Column(name = "company_id")
     private UUID companyId;   // lien vers la Company représentée
 
     // ======================================================
@@ -26,13 +32,16 @@ public class Employer extends User {
         this.companyId = companyId;
     }
 
-    public Employer(String username, String password,
-                    String firstName, String lastName, String email,
-                    String enterpriseName, UUID companyId) {
+    public Employer(String username,
+                    String password,
+                    String firstName,
+                    String lastName,
+                    String email,
+                    String enterpriseName,
+                    UUID companyId) {
 
-        super(username, password, firstName, lastName, email);
-        this.enterpriseName = enterpriseName;
-        this.companyId = companyId;
+        this(null, username, password, firstName, lastName, email,
+                enterpriseName, companyId);
     }
 
 

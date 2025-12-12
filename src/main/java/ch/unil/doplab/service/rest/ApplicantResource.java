@@ -7,7 +7,9 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Path("/applicants")
 @Produces(MediaType.APPLICATION_JSON)
@@ -17,59 +19,52 @@ public class ApplicantResource {
     @Inject
     private ApplicationState state;
 
-    // ============================================
-    // GET /applicants
-    // ============================================
     @GET
-    public Collection<Applicant> all() {
-        return state.getAllApplicants().values();
+    public List<Applicant> getAll() {
+        return new ArrayList<>(state.getAllApplicants().values());
     }
 
-    // ============================================
-    // GET /applicants/{id}
-    // ============================================
     @GET
     @Path("/{id}")
-    public Applicant get(@PathParam("id") UUID id) {
+    public Applicant getById(@PathParam("id") String idStr) {
+        UUID id = UUID.fromString(idStr);
         Applicant a = state.getApplicant(id);
         if (a == null) throw new NotFoundException("Applicant not found");
         return a;
     }
 
-    // ============================================
-    // POST /applicants
-    // ============================================
     @POST
-    public Response add(Applicant a, @Context UriInfo uri) {
-        Applicant created = state.addApplicant(a);
-        URI location = uri.getAbsolutePathBuilder()
+    public Response create(Applicant applicant, @Context UriInfo uriInfo) {
+        Applicant created = state.addApplicant(applicant);
+
+        URI location = uriInfo.getAbsolutePathBuilder()
                 .path(created.getId().toString())
                 .build();
+
         return Response.created(location).entity(created).build();
     }
 
-    // ============================================
-    // PUT /applicants/{id}
-    // ============================================
     @PUT
     @Path("/{id}")
-    public Applicant update(@PathParam("id") UUID id, Applicant updated) {
-        Applicant existing = state.getApplicant(id);
-        if (existing == null) throw new NotFoundException("Applicant not found");
+    public Applicant update(@PathParam("id") String idStr, Applicant updated) {
+        UUID id = UUID.fromString(idStr);
 
-        updated.setId(id);
-        state.getAllApplicants().put(id, updated);
-        return updated;
+        boolean ok = state.setApplicant(id, updated);   // needs setApplicant in ApplicationState
+        if (!ok) {
+            throw new NotFoundException("Applicant not found");
+        }
+
+        return state.getApplicant(id);
     }
 
-    // ============================================
-    // DELETE /applicants/{id}
-    // ============================================
     @DELETE
     @Path("/{id}")
-    public Response delete(@PathParam("id") UUID id) {
-        Applicant removed = state.getAllApplicants().remove(id);
-        if (removed == null) throw new NotFoundException("Applicant not found");
+    public Response delete(@PathParam("id") String idStr) {
+        UUID id = UUID.fromString(idStr);
+
+        boolean ok = state.removeApplicant(id);        // needs removeApplicant in ApplicationState
+        if (!ok) throw new NotFoundException("Applicant not found");
+
         return Response.noContent().build();
     }
 }

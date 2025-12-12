@@ -1,5 +1,7 @@
 package ch.unil.doplab;
 
+import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -9,30 +11,65 @@ import java.util.UUID;
 /**
  * Représente une offre d'emploi dans JobFinder.
  */
+@Entity
+@Table(name = "job_offers")
 public class JobOffer {
 
     // ======================================================
     // ATTRIBUTS
     // ======================================================
 
+    @Id
+    @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
+
+    @Column(name = "employer_id", nullable = false)
     private UUID employerId;     // créateur de l'offre
+
+    @Column(name = "company_id")
     private UUID companyId;      // entreprise optionnelle
 
+    @Column(nullable = false, length = 255)
     private String title;
+
+    @Column(length = 4000)
     private String description;
+
+    @Column(name = "employment_type", length = 100)
     private String employmentType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
     private JobOfferStatus status;      // Draft, Published, Closed, Reopened
 
+    @Column(name = "start_date")
     private LocalDate startDate;
+
+    @Column(name = "end_date")
     private LocalDate endDate;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    // ---- lists of simple values -> ElementCollection ----
+    @ElementCollection
+    @CollectionTable(
+            name = "job_offer_required_qualifications",
+            joinColumns = @JoinColumn(name = "job_offer_id")
+    )
+    @Column(name = "qualification", length = 255)
     private List<String> requiredQualifications = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(
+            name = "job_offer_required_skills",
+            joinColumns = @JoinColumn(name = "job_offer_id")
+    )
+    @Column(name = "skill", length = 255)
     private List<String> requiredSkills = new ArrayList<>();
 
-    // Applications liées
+    // Applications liées – on laisse ça côté logique, pas en DB
+    @Transient
     private List<UUID> applicationIds = new ArrayList<>();
 
 
@@ -54,7 +91,6 @@ public class JobOffer {
         this.employmentType = employmentType;
         this.startDate = startDate;
         this.endDate = endDate;
-
         this.status = JobOfferStatus.Draft;
         this.createdAt = LocalDateTime.now();
     }
@@ -62,11 +98,23 @@ public class JobOffer {
     public JobOffer(UUID employerId, UUID companyId,
                     String title, String description, String employmentType,
                     LocalDate startDate, LocalDate endDate) {
-
         this(null, employerId, companyId, title, description, employmentType,
-             startDate, endDate);
+                startDate, endDate);
     }
 
+    // auto-defaults if JPA creates it
+    @PrePersist
+    private void prePersist() {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (status == null) {
+            status = JobOfferStatus.Draft;
+        }
+    }
 
     // ======================================================
     // GETTERS / SETTERS
@@ -112,9 +160,8 @@ public class JobOffer {
         this.requiredSkills = (list != null) ? list : new ArrayList<>();
     }
 
-
     // ======================================================
-    // APPLICATIONS RELIÉES
+    // APPLICATIONS RELIÉES (LOGIQUE SEULEMENT)
     // ======================================================
 
     public List<UUID> getApplicationIds() { return applicationIds; }
@@ -128,7 +175,6 @@ public class JobOffer {
         applicationIds.remove(id);
     }
 
-
     // ======================================================
     // UTILS
     // ======================================================
@@ -140,7 +186,6 @@ public class JobOffer {
     public void addRequiredQualification(String q) {
         if (q != null && !q.isBlank()) requiredQualifications.add(q);
     }
-
 
     @Override
     public String toString() {

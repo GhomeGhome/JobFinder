@@ -7,7 +7,9 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Path("/employers")
 @Produces(MediaType.APPLICATION_JSON)
@@ -21,8 +23,8 @@ public class EmployerResource {
     // GET /employers
     // ============================================
     @GET
-    public Collection<Employer> all() {
-        return state.getAllEmployers().values();
+    public List<Employer> all() {
+        return new ArrayList<>(state.getAllEmployers().values());
     }
 
     // ============================================
@@ -30,7 +32,8 @@ public class EmployerResource {
     // ============================================
     @GET
     @Path("/{id}")
-    public Employer get(@PathParam("id") UUID id) {
+    public Employer get(@PathParam("id") String idStr) {
+        UUID id = UUID.fromString(idStr);
         Employer e = state.getEmployer(id);
         if (e == null) throw new NotFoundException("Employer not found");
         return e;
@@ -42,9 +45,11 @@ public class EmployerResource {
     @POST
     public Response add(Employer e, @Context UriInfo uri) {
         Employer created = state.addEmployer(e);
+
         URI location = uri.getAbsolutePathBuilder()
                 .path(created.getId().toString())
                 .build();
+
         return Response.created(location).entity(created).build();
     }
 
@@ -53,13 +58,15 @@ public class EmployerResource {
     // ============================================
     @PUT
     @Path("/{id}")
-    public Employer update(@PathParam("id") UUID id, Employer updated) {
-        Employer existing = state.getEmployer(id);
-        if (existing == null) throw new NotFoundException("Employer not found");
+    public Employer update(@PathParam("id") String idStr, Employer updated) {
+        UUID id = UUID.fromString(idStr);
 
-        updated.setId(id);
-        state.getAllEmployers().put(id, updated);
-        return updated;
+        boolean ok = state.setEmployer(id, updated);   // needs setEmployer in ApplicationState
+        if (!ok) {
+            throw new NotFoundException("Employer not found");
+        }
+
+        return state.getEmployer(id);
     }
 
     // ============================================
@@ -67,9 +74,12 @@ public class EmployerResource {
     // ============================================
     @DELETE
     @Path("/{id}")
-    public Response delete(@PathParam("id") UUID id) {
-        Employer removed = state.getAllEmployers().remove(id);
-        if (removed == null) throw new NotFoundException("Employer not found");
+    public Response delete(@PathParam("id") String idStr) {
+        UUID id = UUID.fromString(idStr);
+
+        boolean removed = state.removeEmployer(id);    // needs removeEmployer in ApplicationState
+        if (!removed) throw new NotFoundException("Employer not found");
+
         return Response.noContent().build();
     }
 }
