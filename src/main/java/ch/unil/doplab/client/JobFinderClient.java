@@ -189,6 +189,42 @@ public class JobFinderClient {
                 .post(Entity.json("")); // Empty body as params are in URL
     }
 
+    public List<Application> getApplicationsByOffer(UUID offerId) {
+        return client.target(BASE_URL + "/applications/by-offer/" + offerId)
+                .request(MediaType.APPLICATION_JSON)
+                .get(new GenericType<List<Application>>() {});
+    }
+
+    public Applicant createApplicant(Applicant a) {
+        Response response = null;
+        try {
+            response = target.path("applicants")
+                    .request(MediaType.APPLICATION_JSON)
+                    .post(Entity.json(a));
+            if (response.getStatus() >= 200 && response.getStatus() < 300) {
+                return response.readEntity(Applicant.class);
+            }
+            return null;
+        } finally {
+            if (response != null) response.close();
+        }
+    }
+
+    public Employer createEmployer(Employer e) {
+        Response response = null;
+        try {
+            response = target.path("employers")
+                    .request(MediaType.APPLICATION_JSON)
+                    .post(Entity.json(e));
+            if (response.getStatus() >= 200 && response.getStatus() < 300) {
+                return response.readEntity(Employer.class);
+            }
+            return null;
+        } finally {
+            if (response != null) response.close();
+        }
+    }
+
     public boolean updateApplicant(Applicant app) {
         try {
             Response response = target.path("applicants")

@@ -3,7 +3,7 @@
                 xmlns:h="http://xmlns.jcp.org/jsf/html"
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-                template="/TEMPLATES/applicantTemplate.xhtml">
+                template="#{loginBean.isEmployer() ? '/TEMPLATES/employerTemplate.xhtml' : '/TEMPLATES/applicantTemplate.xhtml'}">
 
     <ui:define name="title">Job details – JobFinder</ui:define>
 
@@ -41,19 +41,21 @@
                 <h3 style="margin-top: 24px;">Status</h3>
                 <span class="status-badge">#{applicationViewBean.offer.status}</span>
 
-                <div style="margin-top: 32px; display: flex; gap: 16px; align-items: center;">
-                    <h:form>
-                        <h:commandButton value="Apply now"
-                                         action="#{applicationViewBean.apply}"
-                                         styleClass="btn btn-primary"
-                                         disabled="#{applicationViewBean.alreadyApplied}" />
-                        <h:messages styleClass="form-messages" />
-                    </h:form>
+                <h:panelGroup rendered="#{not loginBean.employer}">
+                    <div style="margin-top: 32px; display: flex; gap: 16px; align-items: center;">
+                        <h:form>
+                            <h:commandButton value="Apply now"
+                                             action="#{applicationViewBean.apply}"
+                                             styleClass="btn btn-primary"
+                                             disabled="#{applicationViewBean.alreadyApplied}" />
+                            <h:messages styleClass="form-messages" />
+                        </h:form>
 
-                    <h:link outcome="/applicantJobs.xhtml"
-                            value="Back to job list"
-                            styleClass="btn btn-light" />
-                </div>
+                        <h:link outcome="/applicantJobs.xhtml"
+                                value="Back to job list"
+                                styleClass="btn btn-light" />
+                    </div>
+                </h:panelGroup>
 
                 <h:panelGroup rendered="#{applicationViewBean.alreadyApplied}">
                     <p style="margin-top: 12px; color: #16a34a;">

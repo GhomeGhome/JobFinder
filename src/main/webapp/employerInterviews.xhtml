@@ -35,22 +35,25 @@
                                        var="job"
                                        itemValue="#{job.id}"
                                        itemLabel="#{job.title} - #{jobOfferBean.companyName(job)}" />
+                        <f:ajax render="applicantSelectPanel" />
                     </h:selectOneMenu>
                 </div>
 
                 <!-- Applicant -->
                 <div class="field">
                     <span class="field-label">Applicant</span>
-                    <h:selectOneMenu value="#{interviewBean.selectedApplicantId}"
-                                     styleClass="input-full">
-                        <f:selectItem itemValue="" itemLabel="Select applicant"
-                                      noSelectionOption="true" />
-                        <!-- applicantsForSelectedJob should return only applicants who applied to selected job -->
-                        <f:selectItems value="#{interviewBean.applicantsForSelectedJob}"
-                                       var="app"
-                                       itemValue="#{app.id}"
-                                       itemLabel="#{app.firstName} #{app.lastName}" />
-                    </h:selectOneMenu>
+                    <h:panelGroup id="applicantSelectPanel">
+                        <h:selectOneMenu value="#{interviewBean.selectedApplicantId}"
+                                         styleClass="input-full">
+                            <f:selectItem itemValue="" itemLabel="Select applicant"
+                                          noSelectionOption="true" />
+                            <!-- Only applicants with Accepted application for the selected job -->
+                            <f:selectItems value="#{interviewBean.applicantsForSelectedJob}"
+                                           var="app"
+                                           itemValue="#{app.id}"
+                                           itemLabel="#{app.firstName} #{app.lastName}" />
+                        </h:selectOneMenu>
+                    </h:panelGroup>
                 </div>
 
                 <!-- Date & time -->

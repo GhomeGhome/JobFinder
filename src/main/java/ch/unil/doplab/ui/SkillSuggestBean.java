@@ -90,6 +90,11 @@ public class SkillSuggestBean implements Serializable {
         // IMPORTANT: persist applicant first
         boolean ok = client.updateApplicant(a);
         if (ok) {
+            // refresh session copy so subsequent renders show saved skills immediately
+            ch.unil.doplab.Applicant fresh = client.getApplicant(a.getId());
+            if (fresh != null) {
+                loginBean.setLoggedApplicant(fresh);
+            }
             client.recomputeMatchScoresForApplicant(a.getId());
         }
     }

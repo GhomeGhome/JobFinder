@@ -22,13 +22,15 @@
 
         <div class="card">
         <div class="scroll-container">
-            <h:dataTable value="#{companyBean.allCompanies}"
+            <h:dataTable value="#{companyBean.companiesForLoggedEmployer}"
                              var="c"
                              styleClass="job-table">
 
                     <h:column>
                         <f:facet name="header">Name</f:facet>
-                        #{c.name}
+                        <h:link value="#{c.name}" outcome="/companyDetails.xhtml" style="font-weight:bold; color:#2563eb;">
+                            <f:param name="companyId" value="#{c.id}" />
+                        </h:link>
                     </h:column>
 
                     <h:column>

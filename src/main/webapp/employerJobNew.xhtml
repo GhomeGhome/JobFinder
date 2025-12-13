@@ -34,7 +34,7 @@
                 <div class="field">
                     <span class="field-label">Company</span>
                     <h:selectOneMenu value="#{employerJobFormBean.selectedCompanyId}"
-                                     styleClass="input-full">
+                                     styleClass="input-full" required="true">
                         <f:selectItem itemLabel="Select a company…" itemValue="" />
                         <f:selectItems value="#{employerJobFormBean.availableCompanies}"
                                        var="c"
@@ -66,7 +66,117 @@
                                      required="true" />
                 </div>
 
-                <!-- Later we can add required skills here (ESCO / free text) -->
+                <!-- Required skills (manual quick add) -->
+                <div class="field">
+                    <span class="field-label">Required skills</span>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <h:inputText id="reqSkillInput"
+                                     value="#{employerJobFormBean.requiredSkillInput}"
+                                     styleClass="input-full"
+                                     style="max-width:380px;"
+                                     placeholder="e.g., java, sql, spring" />
+                        <h:commandButton value="Add"
+                                         action="#{employerJobFormBean.addRequiredSkill}"
+                                         styleClass="btn"
+                                         type="button">
+                            <f:ajax render="requiredSkillsPanel reqSkillInput" />
+                        </h:commandButton>
+                    </div>
+                    <small style="color:#6b7280;">Add one or multiple (comma-separated). They will be used to compute match scores.</small>
+
+                    <h:panelGroup id="requiredSkillsPanel">
+                        <ui:fragment rendered="#{not empty employerJobFormBean.jobOffer.requiredSkills}">
+                            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                                <ui:repeat value="#{employerJobFormBean.jobOffer.requiredSkills}" var="s">
+                                    <span class="status-badge" style="background:#e0f2fe; color:#0284c7; display:inline-flex; align-items:center; gap:6px;">
+                                        #{s}
+                                        <h:commandLink value="×"
+                                                       action="#{employerJobFormBean.removeRequiredSkill(s)}"
+                                                       style="text-decoration:none; color:#0284c7; font-weight:bold;">
+                                            <f:ajax render="requiredSkillsPanel" />
+                                        </h:commandLink>
+                                    </span>
+                                </ui:repeat>
+                            </div>
+                        </ui:fragment>
+                    </h:panelGroup>
+                </div>
+
+                <!-- ESCO picker for Required skills -->
+                <div class="field">
+                    <span class="field-label">Search skills (ESCO)</span>
+                    <h:inputText value="#{jobReqBean.skillQuery}" styleClass="input-full" id="escoSkillQuery">
+                        <f:ajax event="keyup" listener="#{jobReqBean.refreshSkillSuggestions}" render="escoSkillSuggestions escoSelectedSkills" />
+                    </h:inputText>
+
+                    <h:panelGroup id="escoSkillSuggestions">
+                        <ui:fragment rendered="#{not empty jobReqBean.skillSuggestions}">
+                            <ul class="suggestions-list" style="background:white; border:1px solid #ddd; list-style:none; padding:0; margin-top:8px;">
+                                <ui:repeat value="#{jobReqBean.skillSuggestions}" var="s">
+                                    <li style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+                                        #{s['label']}
+                                        <h:commandLink value="Add" style="color:#2563eb; font-weight:bold;" action="#{jobReqBean.addSkill(s)}">
+                                            <f:ajax render="requiredSkillsPanel escoSelectedSkills" />
+                                        </h:commandLink>
+                                    </li>
+                                </ui:repeat>
+                            </ul>
+                        </ui:fragment>
+                    </h:panelGroup>
+
+                    <h:panelGroup id="escoSelectedSkills">
+                        <ui:fragment rendered="#{not empty employerJobFormBean.jobOffer.requiredSkills}">
+                            <div class="chip-container" style="margin-top:10px;">
+                                <ui:repeat value="#{employerJobFormBean.jobOffer.requiredSkills}" var="s">
+                                    <span class="chip" style="background:#e0f2fe; color:#0284c7; padding:4px 8px; border-radius:12px; margin-right:5px; font-size:12px;">
+                                        #{s}
+                                        <h:commandLink value="×" action="#{jobReqBean.removeSkill(s)}" style="margin-left:4px; color:#0284c7; text-decoration:none;">
+                                            <f:ajax render="requiredSkillsPanel escoSelectedSkills" />
+                                        </h:commandLink>
+                                    </span>
+                                </ui:repeat>
+                            </div>
+                        </ui:fragment>
+                    </h:panelGroup>
+                </div>
+
+                <!-- ESCO picker for Required qualifications -->
+                <div class="field">
+                    <span class="field-label">Search qualifications (ESCO)</span>
+                    <h:inputText value="#{jobReqBean.qualificationQuery}" styleClass="input-full" id="escoQualQuery">
+                        <f:ajax event="keyup" listener="#{jobReqBean.refreshQualificationSuggestions}" render="escoQualSuggestions escoSelectedQuals" />
+                    </h:inputText>
+
+                    <h:panelGroup id="escoQualSuggestions">
+                        <ui:fragment rendered="#{not empty jobReqBean.qualificationSuggestions}">
+                            <ul class="suggestions-list" style="background:white; border:1px solid #ddd; list-style:none; padding:0; margin-top:8px;">
+                                <ui:repeat value="#{jobReqBean.qualificationSuggestions}" var="q">
+                                    <li style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+                                        #{q['label']}
+                                        <h:commandLink value="Add" style="color:#2563eb; font-weight:bold;" action="#{jobReqBean.addQualification(q)}">
+                                            <f:ajax render="escoSelectedQuals" />
+                                        </h:commandLink>
+                                    </li>
+                                </ui:repeat>
+                            </ul>
+                        </ui:fragment>
+                    </h:panelGroup>
+
+                    <h:panelGroup id="escoSelectedQuals">
+                        <ui:fragment rendered="#{not empty employerJobFormBean.jobOffer.requiredQualifications}">
+                            <div class="chip-container" style="margin-top:10px;">
+                                <ui:repeat value="#{employerJobFormBean.jobOffer.requiredQualifications}" var="q">
+                                    <span class="chip" style="background:#fef3c7; color:#b45309; padding:4px 8px; border-radius:12px; margin-right:5px; font-size:12px;">
+                                        #{q}
+                                        <h:commandLink value="×" action="#{jobReqBean.removeQualification(q)}" style="margin-left:4px; color:#b45309; text-decoration:none;">
+                                            <f:ajax render="escoSelectedQuals" />
+                                        </h:commandLink>
+                                    </span>
+                                </ui:repeat>
+                            </div>
+                        </ui:fragment>
+                    </h:panelGroup>
+                </div>
 
                 <div style="margin-top: 24px; display:flex; gap:16px;">
                     <h:commandButton value="Create job"

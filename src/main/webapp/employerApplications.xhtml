@@ -57,7 +57,11 @@
 
             <h:column>
                     <f:facet name="header">Job offer</f:facet>
-                    <strong>#{applicationBean.getJobTitle(a.jobOfferId)}</strong>
+                    <h:link outcome="/applicantJobDetails.xhtml"
+                            style="font-weight: bold; color: #2563eb; text-decoration: underline;">
+                        #{applicationBean.getJobTitle(a.jobOfferId)}
+                        <f:param name="jobId" value="#{a.jobOfferId}" />
+                    </h:link>
                 </h:column>
 
                 <h:column>
@@ -72,18 +76,18 @@
                 <h:column>
                     <f:facet name="header">Status</f:facet>
                     <div style="display: flex; gap: 8px; align-items: center;">
-                    <h:selectOneMenu value="#{a.status}"
-                                     style="padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
-
-                        <f:selectItem itemValue="Submitted" itemLabel="Submitted" itemDisabled="true" />
-                        <f:selectItem itemValue="In_review" itemLabel="In Review" />
-                        <f:selectItem itemValue="Accepted" itemLabel="Accepted" />
-                        <f:selectItem itemValue="Rejected" itemLabel="Rejected" />
-                        <f:ajax execute="@this" />
-                    </h:selectOneMenu>
-                    <h:commandButton value="Update"
-                                     action="#{applicationBean.updateStatus(a)}"
-                                     style="background-color: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;" />
+                        <h:selectOneMenu value="#{a.status}"
+                                         style="padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+                            <!-- Only allow employer-actions (In Review / Accepted / Rejected) -->
+                            <f:selectItems value="#{applicationBean.allStatuses}"
+                                           var="st"
+                                           itemValue="#{st}"
+                                           itemLabel="#{applicationBean.labelFor(st)}" />
+                            <f:ajax execute="@this" />
+                        </h:selectOneMenu>
+                        <h:commandButton value="Update"
+                                         action="#{applicationBean.updateStatus(a)}"
+                                         style="background-color: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;" />
                     </div>
                 </h:column>
 
@@ -111,7 +115,7 @@
                 <h:column>
                     <f:facet name="header">Action</f:facet>
 
-                    <h:panelGroup rendered="#{a.status == 'Accepted'}">
+                    <h:panelGroup rendered="#{a.status.name() eq 'Accepted'}">
                         <h:link outcome="employerInterviews.xhtml"
                                 value="📅 Schedule Interview"
                                 styleClass="btn-small"
@@ -124,7 +128,7 @@
                 <h:column>
                     <f:facet name="header">Action</f:facet>
 
-                    <h:panelGroup rendered="#{a.status == 'Accepted'}">
+                    <h:panelGroup rendered="#{a.status.name() eq 'Accepted'}">
 
                         <h:link outcome="employerInterviews.xhtml"
                                 style="display: inline-block; background-color: #15803d; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold;">

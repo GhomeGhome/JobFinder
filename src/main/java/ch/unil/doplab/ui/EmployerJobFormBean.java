@@ -31,6 +31,7 @@ public class EmployerJobFormBean implements Serializable {
     private List<Company> availableCompanies;
     private String selectedCompanyId;   // binds to <selectOneMenu>
     private String statusString = "Draft"; // default
+    private String requiredSkillInput;  // chip input for required skills
 
     @PostConstruct
     public void init() {
@@ -67,7 +68,11 @@ public class EmployerJobFormBean implements Serializable {
         if (selectedCompanyId != null && !selectedCompanyId.isBlank()) {
             jobOffer.setCompanyId(UUID.fromString(selectedCompanyId));
         } else {
-            jobOffer.setCompanyId(null);
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                            "Choose a company",
+                            "Every job post must belong to a company. Please select one from the list before creating the post."));
+            return null;
         }
 
         // set status from dropdown
@@ -93,6 +98,34 @@ public class EmployerJobFormBean implements Serializable {
 
         // Redirect to employer job posts page
         return "/employerJobOffers.xhtml?faces-redirect=true";
+    }
+
+    // ---- Required skills helpers ----
+    public void addRequiredSkill() {
+        if (jobOffer.getRequiredSkills() == null) {
+            jobOffer.setRequiredSkills(new java.util.ArrayList<>());
+        }
+        if (requiredSkillInput == null || requiredSkillInput.isBlank()) {
+            return;
+        }
+        // Support comma-separated input; trim, de-duplicate, ignore blanks
+        java.util.LinkedHashSet<String> toAdd = new java.util.LinkedHashSet<>();
+        for (String s : requiredSkillInput.split(",")) {
+            String t = s == null ? "" : s.trim();
+            if (!t.isBlank()) toAdd.add(t);
+        }
+        for (String s : toAdd) {
+            if (!jobOffer.getRequiredSkills().contains(s)) {
+                jobOffer.getRequiredSkills().add(s);
+            }
+        }
+        requiredSkillInput = null; // clear input after add
+    }
+
+    public void removeRequiredSkill(String skill) {
+        if (skill == null) return;
+        if (jobOffer.getRequiredSkills() == null) return;
+        jobOffer.getRequiredSkills().removeIf(s -> skill.equalsIgnoreCase(s));
     }
 
     // ========== Getters / setters ==========
@@ -123,5 +156,13 @@ public class EmployerJobFormBean implements Serializable {
 
     public void setStatusString(String statusString) {
         this.statusString = statusString;
+    }
+
+    public String getRequiredSkillInput() {
+        return requiredSkillInput;
+    }
+
+    public void setRequiredSkillInput(String requiredSkillInput) {
+        this.requiredSkillInput = requiredSkillInput;
     }
 }

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<h:head>
+    <title>Sign up - JobFinder</title>
+    <link rel="stylesheet" type="text/css" href="/jobfinder/resources/css/styles.css" />
+</h:head>
+<h:body class="page-bg">
+    <div class="center-wrapper">
+        <div class="card login-card">
+            <h1 class="app-title">JobFinder</h1>
+            <p class="app-subtitle">Create your account</p>
+
+            <h:form>
+                <h:messages styleClass="form-messages" />
+
+                <div class="field">
+                    <span class="field-label">Sign up as</span>
+                    <h:selectOneRadio value="#{signUpBean.role}" styleClass="role-radio">
+                        <f:selectItem itemValue="APPLICANT" itemLabel="Applicant" />
+                        <f:selectItem itemValue="EMPLOYER" itemLabel="Employer" />
+                    </h:selectOneRadio>
+                </div>
+
+                <div class="field">
+                    <span class="field-label">First name</span>
+                    <h:inputText value="#{signUpBean.firstName}" styleClass="input-full" required="true" />
+                </div>
+
+                <div class="field">
+                    <span class="field-label">Last name</span>
+                    <h:inputText value="#{signUpBean.lastName}" styleClass="input-full" required="true" />
+                </div>
+
+                <div class="field">
+                    <span class="field-label">Email</span>
+                    <h:inputText value="#{signUpBean.email}" styleClass="input-full" required="true" />
+                </div>
+
+                <div class="field">
+                    <span class="field-label">Username</span>
+                    <h:inputText value="#{signUpBean.username}" styleClass="input-full" required="true" />
+                </div>
+
+                <div class="field">
+                    <span class="field-label">Password</span>
+                    <h:inputSecret value="#{signUpBean.password}" styleClass="input-full" required="true" />
+                </div>
+
+                <h:panelGroup rendered="#{signUpBean.role eq 'EMPLOYER'}">
+                    <div class="field">
+                        <span class="field-label">Enterprise name</span>
+                        <h:inputText value="#{signUpBean.enterpriseName}" styleClass="input-full" />
+                    </div>
+                </h:panelGroup>
+
+                <h:commandButton value="Create account"
+                                 action="#{signUpBean.signUp}"
+                                 styleClass="btn btn-primary btn-full" />
+
+                <div style="margin-top:12px; text-align:center;">
+                    <h:link outcome="/login.xhtml" value="Already have an account? Sign in" />
+                </div>
+            </h:form>
+        </div>
+    </div>
+</h:body>
+</html>

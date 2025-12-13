@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                template="#{loginBean.isEmployer() ? '/TEMPLATES/employerTemplate.xhtml' : '/TEMPLATES/applicantTemplate.xhtml'}">
+
+    <ui:define name="title">Company – JobFinder</ui:define>
+
+    <f:metadata>
+        <f:viewParam name="companyId" value="#{companyViewBean.companyId}" />
+        <f:viewAction action="#{companyViewBean.init}" />
+    </f:metadata>
+
+    <ui:define name="content">
+        <h:panelGroup rendered="#{empty companyViewBean.company}">
+            <div class="card">
+                <p>Company not found.</p>
+                <h:link outcome="/applicantCompanies.xhtml" value="← Back" styleClass="btn btn-light" />
+            </div>
+        </h:panelGroup>
+
+        <h:panelGroup rendered="#{not empty companyViewBean.company}">
+            <div class="page-header">
+                <h1>#{companyViewBean.company.name}</h1>
+                <p class="page-subtitle">#{companyViewBean.company.location}</p>
+            </div>
+
+            <div class="card">
+                <h3>About</h3>
+                <p>#{companyViewBean.company.description}</p>
+            </div>
+        </h:panelGroup>
+    </ui:define>
+</ui:composition>

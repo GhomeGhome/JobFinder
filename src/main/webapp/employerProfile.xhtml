@@ -123,6 +123,32 @@
                                          rows="4" />
                     </div>
 
+                    <h3 style="margin-top: 24px; margin-bottom: 8px;">Link to a company</h3>
+                    <p style="color:#6b7280; margin-top:0;">Search an existing company and link your employer account to it.</p>
+                    <h:form>
+                        <div class="field">
+                            <span class="field-label">Search by name</span>
+                            <h:inputText value="#{companySearchQuery}" styleClass="input-full" id="companySearchInput">
+                                <f:ajax event="keyup" render="companyResults" />
+                            </h:inputText>
+                        </div>
+
+                        <h:panelGroup id="companyResults">
+                            <ui:fragment rendered="#{not empty companyBean.searchByName(companySearchQuery)}">
+                                <ul class="suggestions-list" style="background:white; border:1px solid #ddd; list-style:none; padding:0;">
+                                    <ui:repeat value="#{companyBean.searchByName(companySearchQuery)}" var="c">
+                                        <li style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+                                            #{c.name} · #{c.location}
+                                            <h:commandLink value="Link" action="#{companyBean.linkEmployerToCompany(c.id)}" style="color:#2563eb; font-weight:bold;">
+                                                <f:ajax render="@form" />
+                                            </h:commandLink>
+                                        </li>
+                                    </ui:repeat>
+                                </ul>
+                            </ui:fragment>
+                        </h:panelGroup>
+                    </h:form>
+
                     <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 8px; color: #dc2626;">
                         Account Security
                     </h3>

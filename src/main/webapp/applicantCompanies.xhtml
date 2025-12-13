@@ -17,8 +17,8 @@
 
                 <h:column>
                     <f:facet name="header">Company Name</f:facet>
-                    <h:link value="#{c.name}" outcome="employerProfileView" style="font-weight:bold; color:#2563eb;">
-                        <f:param name="id" value="#{c.ownerEmployerId}" />
+                    <h:link value="#{c.name}" outcome="/companyDetails.xhtml" style="font-weight:bold; color:#2563eb;">
+                        <f:param name="companyId" value="#{c.id}" />
                     </h:link>
                 </h:column>
 

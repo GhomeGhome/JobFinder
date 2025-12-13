@@ -37,27 +37,18 @@ public class ApplicationBean implements Serializable {
 
     public String updateStatus(ch.unil.doplab.Application app) {
         if (app != null) {
-            // 1. Send the update to the server
-            boolean success = client.updateApplication(app);
+            try {
+                client.updateApplicationStatus(app.getId(), app.getStatus().name());
 
-            if (success) {
-                // 2. CRITICAL STEP: Refresh the local session data
-                // We ask the server for the fresh Employer object (which includes the updated application list)
-                ch.unil.doplab.Employer freshEmployer = client.getEmployer(loginBean.getLoggedEmployer().getId());
-
-                // 3. Update the LoginBean so the page shows the new data
-                if (freshEmployer != null) {
-                    loginBean.setLoggedEmployer(freshEmployer);
-                }
-
+                // Optional: refresh scores or employer cache (not strictly needed for status)
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Status updated to " + app.getStatus()));
-            } else {
+            } catch (Exception e) {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Could not update status."));
             }
         }
-        return null; // Reloads the page with the fresh data
+        return null;
     }
 
     /**
@@ -113,14 +104,16 @@ public class ApplicationBean implements Serializable {
                 continue;
             }
 
-            // --- compute + persist match score if missing ---
-            if (app.getMatchScore() == null) {
-                Applicant applicant = client.getApplicant(app.getApplicantId());
-                if (applicant != null) {
-                    double score = computeMatchScore(applicant, offer);
+            // --- compute + persist match score (always) ---
+            Applicant applicant = client.getApplicant(app.getApplicantId());
+            if (applicant != null) {
+                double score = computeMatchScore(applicant, offer);
 
-                    app.setMatchScore(score); // UI immediate
-//                    client.updateApplicationMatchScore(app.getId(), score); // save to DB/API
+                // Persist only if missing or significantly changed
+                Double current = app.getMatchScore();
+                if (current == null || Math.abs(current - score) > 0.05) {
+                    app.setMatchScore(score); // immediate UI update
+                    client.updateApplicationMatchScore(app.getId(), score); // save to DB/API
                 }
             }
 
@@ -166,14 +159,77 @@ public class ApplicationBean implements Serializable {
         return tokens;
     }
 
+    private static double phraseSimilarity(String a, String b) {
+        if (a == null || b == null) return 0.0;
+        String sa = a.trim().toLowerCase();
+        String sb = b.trim().toLowerCase();
+        if (sa.isEmpty() || sb.isEmpty()) return 0.0;
+
+        if (sa.equals(sb)) return 1.0;
+        if (sa.contains(sb) || sb.contains(sa)) return 0.7;
+
+        Set<String> ta = tokenize(sa);
+        Set<String> tb = tokenize(sb);
+        if (ta.isEmpty() || tb.isEmpty()) return 0.0;
+        Set<String> inter = new HashSet<>(ta);
+        inter.retainAll(tb);
+        Set<String> union = new HashSet<>(ta);
+        union.addAll(tb);
+        return union.isEmpty() ? 0.0 : (inter.size() * 1.0) / union.size();
+    }
+
+    private static double listSimilarity(Collection<String> reqs, Collection<String> phrases) {
+        if (reqs == null || reqs.isEmpty() || phrases == null || phrases.isEmpty()) return 0.0;
+        double sum = 0.0;
+        int n = 0;
+        for (String r : reqs) {
+            if (r == null || r.isBlank()) continue;
+            double best = 0.0;
+            for (String p : phrases) {
+                best = Math.max(best, phraseSimilarity(r, p));
+                if (best >= 1.0) break;
+            }
+            sum += best;
+            n++;
+        }
+        if (n == 0) return 0.0;
+        return (sum / n) * 100.0;
+    }
+
     private double computeMatchScore(Applicant applicant, JobOffer offer) {
         if (applicant == null || offer == null) return 0.0;
 
-        String skillsStr = applicant.getSkillsAsString();
-        Set<String> skillTokens = tokenize(skillsStr);
+        LinkedHashSet<String> applicantPhrases = new LinkedHashSet<>();
+        if (applicant.getSkills() != null) {
+            for (String s : applicant.getSkills()) {
+                if (s != null && !s.isBlank()) applicantPhrases.add(s.trim().toLowerCase());
+            }
+        }
+        if (applicantPhrases.isEmpty()) {
+            String skillsStr = applicant.getSkillsAsString();
+            if (skillsStr != null && !skillsStr.isBlank()) {
+                for (String s : skillsStr.split(",")) {
+                    String t = s.trim().toLowerCase();
+                    if (!t.isBlank()) applicantPhrases.add(t);
+                }
+            }
+        }
+        if (applicantPhrases.isEmpty()) return 0.0;
 
-        if (skillTokens.isEmpty()) {
-            return 0.0;
+        List<String> reqSkills = offer.getRequiredSkills();
+        List<String> reqQuals  = offer.getRequiredQualifications();
+        boolean hasSkills = reqSkills != null && !reqSkills.isEmpty();
+        boolean hasQuals  = reqQuals  != null && !reqQuals.isEmpty();
+
+        if (hasSkills || hasQuals) {
+            double skillsScore = hasSkills ? listSimilarity(reqSkills, applicantPhrases) : 0.0;
+            double qualsScore  = hasQuals  ? listSimilarity(reqQuals,  applicantPhrases) : 0.0;
+
+            double result = (hasSkills && hasQuals)
+                    ? (0.7 * skillsScore + 0.3 * qualsScore)
+                    : (hasSkills ? skillsScore : qualsScore);
+
+            return Math.round(result * 10.0) / 10.0;
         }
 
         StringBuilder jobText = new StringBuilder();
@@ -181,21 +237,34 @@ public class ApplicationBean implements Serializable {
         if (offer.getDescription() != null) jobText.append(offer.getDescription());
 
         Set<String> jobTokens = tokenize(jobText.toString());
-        if (jobTokens.isEmpty()) {
-            return 0.0;
+        if (jobTokens.isEmpty()) return 0.0;
+
+        Set<String> applicantTokens = new HashSet<>();
+        for (String phrase : applicantPhrases) {
+            applicantTokens.addAll(tokenize(phrase));
         }
+        if (applicantTokens.isEmpty()) return 0.0;
 
         int matches = 0;
-        for (String s : skillTokens) {
-            if (jobTokens.contains(s)) {
-                matches++;
-            }
-        }
+        for (String s : applicantTokens) if (jobTokens.contains(s)) matches++;
 
-        double raw = (matches * 100.0) / skillTokens.size();
-        return Math.round(raw * 10.0) / 10.0;   // e.g. 83.3
+        double raw = (matches * 100.0) / applicantTokens.size();
+        return Math.round(raw * 10.0) / 10.0;
     }
 
+
+    // --- Status options for UI ---
+    public ch.unil.doplab.ApplicationStatus[] getAllStatuses() {
+        return ch.unil.doplab.ApplicationStatus.values();
+    }
+
+    public String labelFor(ch.unil.doplab.ApplicationStatus st) {
+        if (st == null) return "";
+        return switch (st) {
+            case In_review -> "In Review";
+            default -> st.name();
+        };
+    }
 
     // --- Getters/Setters ---
 

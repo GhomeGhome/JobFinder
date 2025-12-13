@@ -152,8 +152,19 @@
                     <div class="field">
                         <span class="field-label">CV / Resume (URL or Text)</span>
                         <h:inputText value="#{loginBean.loggedApplicant.cvInfo}" styleClass="input-full" />
-                        <small style="color: #6b7280">Paste a link to your PDF or Google Doc.</small>
+                        <small style="color: #6b7280">Paste a link to your PDF or Google Doc, or upload a PDF below.</small>
                     </div>
+
+                    <h:form enctype="multipart/form-data" style="margin-top:8px;">
+                        <div class="field">
+                            <span class="field-label">Upload PDF</span>
+                            <h:inputFile value="#{uploadBean.cvFile}" styleClass="input-full" />
+                        </div>
+                        <h:commandButton value="Upload CV (PDF)"
+                                         action="#{uploadBean.uploadCv}"
+                                         styleClass="btn btn-light" />
+                        <h:messages styleClass="form-messages" />
+                    </h:form>
 
                     <div class="field">
                         <span class="field-label">Manual Skills (Optional)</span>

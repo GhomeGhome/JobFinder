@@ -44,6 +44,9 @@ public class InterviewBean implements Serializable {
     @Inject
     private LoginBean loginBean;
 
+    @Inject
+    private ch.unil.doplab.client.JobFinderClient client;
+
     // ===== Getters/setters for form =====
 
     public String getSelectedJobOfferId() {
@@ -93,7 +96,8 @@ public class InterviewBean implements Serializable {
      * For now: just reuse all offers; you can later filter by logged-in employer.
      */
     public List<JobOffer> getEmployerOffers() {
-        return jobOfferBean.getAllOffers();
+        // Show only offers owned by logged-in employer
+        return jobOfferBean.getEmployerOffers();
     }
 
     /**
@@ -102,8 +106,29 @@ public class InterviewBean implements Serializable {
      * (only those who applied to that specific job).
      */
     public List<Applicant> getApplicantsForSelectedJob() {
-        // TODO later: filter by applications for selectedJobOfferId
-        return applicantBean.getAllApplicants();
+        List<Applicant> result = new ArrayList<>();
+        if (selectedJobOfferId == null || selectedJobOfferId.isBlank()) return result;
+
+        java.util.UUID jobId;
+        try {
+            jobId = java.util.UUID.fromString(selectedJobOfferId);
+        } catch (IllegalArgumentException e) {
+            return result;
+        }
+
+        // Only applicants whose application to this job is Accepted
+        var apps = client.getApplicationsByOffer(jobId);
+        java.util.LinkedHashSet<java.util.UUID> acceptedIds = new java.util.LinkedHashSet<>();
+        for (ch.unil.doplab.Application a : apps) {
+            if (a.getStatus() != null && "Accepted".equals(a.getStatus().name())) {
+                acceptedIds.add(a.getApplicantId());
+            }
+        }
+        for (java.util.UUID aid : acceptedIds) {
+            Applicant a = client.getApplicant(aid);
+            if (a != null) result.add(a);
+        }
+        return result;
     }
 
     /**
@@ -149,15 +174,32 @@ public class InterviewBean implements Serializable {
 
     public String schedule() {
         if (selectedJobOfferId == null || selectedApplicantId == null || scheduledAt == null) {
-            // in a real app, use FacesMessage to show an error
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Missing data", "Select job, applicant and date."));
             return null;
         }
 
         JobOffer selectedJob = findJobOfferById(selectedJobOfferId);
         Applicant selectedApplicant = findApplicantById(selectedApplicantId);
 
-
         if (selectedJob == null || selectedApplicant == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Not found", "Job or applicant not found."));
+            return null;
+        }
+
+        // Verify applicant is accepted for this job
+        java.util.UUID jobId = java.util.UUID.fromString(selectedJobOfferId);
+        java.util.UUID appId = java.util.UUID.fromString(selectedApplicantId);
+        boolean accepted = false;
+        for (ch.unil.doplab.Application a : client.getApplicationsByOffer(jobId)) {
+            if (appId.equals(a.getApplicantId()) && a.getStatus() != null && "Accepted".equals(a.getStatus().name())) {
+                accepted = true; break;
+            }
+        }
+        if (!accepted) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Not allowed", "You can schedule only for Accepted applications."));
             return null;
         }
 

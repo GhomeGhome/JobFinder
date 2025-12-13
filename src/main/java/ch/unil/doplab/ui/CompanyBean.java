@@ -22,9 +22,40 @@ public class CompanyBean {
     private JobFinderClient client; // NEW
 
     public List<Company> getAllCompanies() {
-        // return appState.getAllCompanies().values().stream().collect(Collectors.toList());
+        return client.getAllCompanies();
+    }
 
-        return client.getAllCompanies(); // NEW
+    public List<Company> getCompaniesForLoggedEmployer() {
+        if (loginBean.getLoggedEmployer() == null) return java.util.Collections.emptyList();
+        java.util.UUID empId = loginBean.getLoggedEmployer().getId();
+        java.util.UUID worksAt = loginBean.getLoggedEmployer().getCompanyId();
+
+        return client.getAllCompanies().stream()
+                .filter(c -> empId.equals(c.getOwnerEmployerId()) || (worksAt != null && worksAt.equals(c.getId())))
+                .collect(Collectors.toList());
+    }
+
+    // simple search by name (contains, case-insensitive)
+    public List<Company> searchByName(String query) {
+        if (query == null || query.isBlank()) return java.util.Collections.emptyList();
+        String q = query.toLowerCase();
+        return client.getAllCompanies().stream()
+                .filter(c -> c.getName() != null && c.getName().toLowerCase().contains(q))
+                .collect(Collectors.toList());
+    }
+
+    public boolean linkEmployerToCompany(java.util.UUID companyId) {
+        if (loginBean.getLoggedEmployer() == null || companyId == null) return false;
+        var emp = loginBean.getLoggedEmployer();
+        emp.setCompanyId(companyId);
+        boolean ok = client.updateEmployer(emp);
+        if (ok) {
+            // refresh session company
+            loginBean.setLoggedEmployer(emp);
+            var company = client.getCompany(companyId);
+            if (company != null) loginBean.setLoggedCompany(company);
+        }
+        return ok;
     }
     /**
      * NEW: Returns companies the applicant has applied to.
