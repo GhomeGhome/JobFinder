@@ -33,7 +33,6 @@ public class InterviewBean implements Serializable {
     private String mode; // "ONLINE", "ONSITE", "PHONE"
     private String locationOrLink;
 
-
     // you already have these UI beans in your app
     @Inject
     private JobOfferBean jobOfferBean;
@@ -54,7 +53,7 @@ public class InterviewBean implements Serializable {
     }
 
     public void setSelectedJobOfferId(String selectedJobOfferId) {
-        this.selectedJobOfferId = selectedJobOfferId;
+        this.selectedJobOfferId = (selectedJobOfferId != null) ? selectedJobOfferId.trim() : null;
     }
 
     public String getSelectedApplicantId() {
@@ -62,7 +61,7 @@ public class InterviewBean implements Serializable {
     }
 
     public void setSelectedApplicantId(String selectedApplicantId) {
-        this.selectedApplicantId = selectedApplicantId;
+        this.selectedApplicantId = (selectedApplicantId != null) ? selectedApplicantId.trim() : null;
     }
 
     public Date getScheduledAt() {
@@ -107,26 +106,46 @@ public class InterviewBean implements Serializable {
      */
     public List<Applicant> getApplicantsForSelectedJob() {
         List<Applicant> result = new ArrayList<>();
-        if (selectedJobOfferId == null || selectedJobOfferId.isBlank()) return result;
 
-        java.util.UUID jobId;
-        try {
-            jobId = java.util.UUID.fromString(selectedJobOfferId);
-        } catch (IllegalArgumentException e) {
-            return result;
-        }
-
-        // Only applicants whose application to this job is Accepted
-        var apps = client.getApplicationsByOffer(jobId);
         java.util.LinkedHashSet<java.util.UUID> acceptedIds = new java.util.LinkedHashSet<>();
-        for (ch.unil.doplab.Application a : apps) {
-            if (a.getStatus() != null && "Accepted".equals(a.getStatus().name())) {
-                acceptedIds.add(a.getApplicantId());
+
+        // If no job is selected (e.g. opened from top nav), show all accepted
+        // applicants
+        // across all offers owned by the logged-in employer.
+        if (selectedJobOfferId == null || selectedJobOfferId.isBlank()) {
+            for (JobOffer offer : getEmployerOffers()) {
+                if (offer == null || offer.getId() == null)
+                    continue;
+                var apps = client.getApplicationsByOffer(offer.getId());
+                for (ch.unil.doplab.Application a : apps) {
+                    if (a.getStatus() != null && "Accepted".equals(a.getStatus().name())) {
+                        acceptedIds.add(a.getApplicantId());
+                    }
+                }
             }
         }
+
+        // If a job is selected, show accepted applicants for that specific job.
+        else {
+            java.util.UUID jobId;
+            try {
+                jobId = java.util.UUID.fromString(selectedJobOfferId);
+            } catch (IllegalArgumentException e) {
+                return result;
+            }
+
+            var apps = client.getApplicationsByOffer(jobId);
+            for (ch.unil.doplab.Application a : apps) {
+                if (a.getStatus() != null && "Accepted".equals(a.getStatus().name())) {
+                    acceptedIds.add(a.getApplicantId());
+                }
+            }
+        }
+
         for (java.util.UUID aid : acceptedIds) {
             Applicant a = client.getApplicant(aid);
-            if (a != null) result.add(a);
+            if (a != null)
+                result.add(a);
         }
         return result;
     }
@@ -163,8 +182,7 @@ public class InterviewBean implements Serializable {
                     interview.getScheduledAt(),
                     modeLabel,
                     statusLabel,
-                    interview.getLocationOrLink()
-            ));
+                    interview.getLocationOrLink()));
         }
 
         return result;
@@ -194,12 +212,14 @@ public class InterviewBean implements Serializable {
         boolean accepted = false;
         for (ch.unil.doplab.Application a : client.getApplicationsByOffer(jobId)) {
             if (appId.equals(a.getApplicantId()) && a.getStatus() != null && "Accepted".equals(a.getStatus().name())) {
-                accepted = true; break;
+                accepted = true;
+                break;
             }
         }
         if (!accepted) {
             FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Not allowed", "You can schedule only for Accepted applications."));
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Not allowed",
+                            "You can schedule only for Accepted applications."));
             return null;
         }
 
@@ -212,8 +232,7 @@ public class InterviewBean implements Serializable {
         InterviewMode interviewMode;
         try {
             interviewMode = InterviewMode.valueOf(
-                    (mode != null) ? mode : "ONLINE"
-            );
+                    (mode != null) ? mode : "ONLINE");
         } catch (IllegalArgumentException ex) {
             interviewMode = InterviewMode.ONLINE;
         }
@@ -229,8 +248,7 @@ public class InterviewBean implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_INFO,
                         "Interview scheduled",
                         "Interview for " + selectedApplicant.getFirstName()
-                                + " – " + selectedJob.getTitle() + " was scheduled.")
-        );
+                                + " – " + selectedJob.getTitle() + " was scheduled."));
 
         // clear form
         selectedJobOfferId = null;
@@ -249,7 +267,8 @@ public class InterviewBean implements Serializable {
     }
 
     public String reschedule(Long id) {
-        // For now: just mark as SCHEDULED again; you can implement a real reschedule flow later
+        // For now: just mark as SCHEDULED again; you can implement a real reschedule
+        // flow later
         Interview interview = findInterviewById(id);
         if (interview != null) {
             interview.setStatus(InterviewStatus.SCHEDULED);
@@ -277,7 +296,8 @@ public class InterviewBean implements Serializable {
     }
 
     private JobOffer findJobOfferById(String id) {
-        if (id == null) return null;
+        if (id == null)
+            return null;
 
         for (JobOffer job : jobOfferBean.getAllOffers()) {
             if (job.getId() != null && job.getId().toString().equals(id)) {
@@ -288,7 +308,8 @@ public class InterviewBean implements Serializable {
     }
 
     private Applicant findApplicantById(String id) {
-        if (id == null) return null;
+        if (id == null)
+            return null;
 
         for (Applicant app : applicantBean.getAllApplicants()) {
             if (app.getId() != null && app.getId().toString().equals(id)) {
@@ -297,6 +318,7 @@ public class InterviewBean implements Serializable {
         }
         return null;
     }
+
     /**
      * NEW: Returns interviews for the logged-in applicant.
      */
@@ -334,8 +356,7 @@ public class InterviewBean implements Serializable {
                         interview.getScheduledAt(),
                         modeLabel,
                         statusLabel,
-                        interview.getLocationOrLink()
-                ));
+                        interview.getLocationOrLink()));
             }
         }
         return result;

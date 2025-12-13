@@ -33,21 +33,51 @@ public class ApplicationBean implements Serializable {
 
     private UUID filterJobOfferId;
 
+    private final Map<UUID, String> selectedStatuses = new HashMap<>();
+
     // --- Actions ---
 
     public String updateStatus(ch.unil.doplab.Application app) {
-        if (app != null) {
-            try {
-                client.updateApplicationStatus(app.getId(), app.getStatus().name());
-
-                // Optional: refresh scores or employer cache (not strictly needed for status)
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Status updated to " + app.getStatus()));
-            } catch (Exception e) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Could not update status."));
-            }
+        if (app == null || app.getId() == null) {
+            return null;
         }
+
+        String desiredRaw = selectedStatuses.get(app.getId());
+        if (desiredRaw == null || desiredRaw.isBlank()) {
+            desiredRaw = (app.getStatus() != null) ? app.getStatus().name() : null;
+        }
+        if (desiredRaw == null || desiredRaw.isBlank()) {
+            desiredRaw = ch.unil.doplab.ApplicationStatus.In_review.name();
+        }
+
+        ch.unil.doplab.ApplicationStatus desired;
+        try {
+            desired = ch.unil.doplab.ApplicationStatus.valueOf(desiredRaw);
+        } catch (Exception e) {
+            desired = ch.unil.doplab.ApplicationStatus.In_review;
+        }
+
+        try {
+            boolean ok = client.updateApplicationStatusOk(app.getId(), desired.name());
+
+            if (ok) {
+                // keep UI selection in sync
+                selectedStatuses.put(app.getId(), desired.name());
+                // keep row object in sync for the current render
+                app.setStatus(desired);
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success",
+                                "Status updated to " + desired));
+            } else {
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error",
+                                "Status update failed. Please retry."));
+            }
+        } catch (Exception e) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Could not update status."));
+        }
+
         return null;
     }
 
@@ -92,7 +122,8 @@ public class ApplicationBean implements Serializable {
         for (Application app : allApps) {
             // Fetch the job for this application to check ownership
             JobOffer offer = client.getJobOffer(app.getJobOfferId());
-            if (offer == null) continue; // Orphaned application
+            if (offer == null)
+                continue; // Orphaned application
 
             // CHECK A: Is this job owned by the logged-in employer?
             if (!employerId.equals(offer.getEmployerId())) {
@@ -118,21 +149,32 @@ public class ApplicationBean implements Serializable {
             }
 
             result.add(app);
+
+            // Ensure dropdown shows current status the first time we see this application
+            if (app.getId() != null && !selectedStatuses.containsKey(app.getId())) {
+                selectedStatuses.put(app.getId(), app.getStatus() != null ? app.getStatus().name() : null);
+            }
         }
 
         return result;
     }
 
+    public Map<UUID, String> getSelectedStatuses() {
+        return selectedStatuses;
+    }
+
     // --- Helpers for UI ---
 
     public String getJobTitle(UUID offerId) {
-        if (offerId == null) return "Unknown";
+        if (offerId == null)
+            return "Unknown";
         JobOffer offer = client.getJobOffer(offerId);
         return (offer != null) ? offer.getTitle() : "Offer Removed";
     }
 
     public String getApplicantName(UUID applicantId) {
-        if (applicantId == null) return "Unknown";
+        if (applicantId == null)
+            return "Unknown";
         Applicant applicant = client.getApplicant(applicantId);
         return (applicant != null)
                 ? applicant.getFirstName() + " " + applicant.getLastName()
@@ -140,10 +182,11 @@ public class ApplicationBean implements Serializable {
     }
 
     // -----------------------------
-// Matching helpers (UI fallback)
-// -----------------------------
+    // Matching helpers (UI fallback)
+    // -----------------------------
     private static Set<String> tokenize(String text) {
-        if (text == null) return Collections.emptySet();
+        if (text == null)
+            return Collections.emptySet();
 
         String[] raw = text
                 .toLowerCase()
@@ -160,17 +203,22 @@ public class ApplicationBean implements Serializable {
     }
 
     private static double phraseSimilarity(String a, String b) {
-        if (a == null || b == null) return 0.0;
+        if (a == null || b == null)
+            return 0.0;
         String sa = a.trim().toLowerCase();
         String sb = b.trim().toLowerCase();
-        if (sa.isEmpty() || sb.isEmpty()) return 0.0;
+        if (sa.isEmpty() || sb.isEmpty())
+            return 0.0;
 
-        if (sa.equals(sb)) return 1.0;
-        if (sa.contains(sb) || sb.contains(sa)) return 0.7;
+        if (sa.equals(sb))
+            return 1.0;
+        if (sa.contains(sb) || sb.contains(sa))
+            return 0.7;
 
         Set<String> ta = tokenize(sa);
         Set<String> tb = tokenize(sb);
-        if (ta.isEmpty() || tb.isEmpty()) return 0.0;
+        if (ta.isEmpty() || tb.isEmpty())
+            return 0.0;
         Set<String> inter = new HashSet<>(ta);
         inter.retainAll(tb);
         Set<String> union = new HashSet<>(ta);
@@ -179,30 +227,36 @@ public class ApplicationBean implements Serializable {
     }
 
     private static double listSimilarity(Collection<String> reqs, Collection<String> phrases) {
-        if (reqs == null || reqs.isEmpty() || phrases == null || phrases.isEmpty()) return 0.0;
+        if (reqs == null || reqs.isEmpty() || phrases == null || phrases.isEmpty())
+            return 0.0;
         double sum = 0.0;
         int n = 0;
         for (String r : reqs) {
-            if (r == null || r.isBlank()) continue;
+            if (r == null || r.isBlank())
+                continue;
             double best = 0.0;
             for (String p : phrases) {
                 best = Math.max(best, phraseSimilarity(r, p));
-                if (best >= 1.0) break;
+                if (best >= 1.0)
+                    break;
             }
             sum += best;
             n++;
         }
-        if (n == 0) return 0.0;
+        if (n == 0)
+            return 0.0;
         return (sum / n) * 100.0;
     }
 
     private double computeMatchScore(Applicant applicant, JobOffer offer) {
-        if (applicant == null || offer == null) return 0.0;
+        if (applicant == null || offer == null)
+            return 0.0;
 
         LinkedHashSet<String> applicantPhrases = new LinkedHashSet<>();
         if (applicant.getSkills() != null) {
             for (String s : applicant.getSkills()) {
-                if (s != null && !s.isBlank()) applicantPhrases.add(s.trim().toLowerCase());
+                if (s != null && !s.isBlank())
+                    applicantPhrases.add(s.trim().toLowerCase());
             }
         }
         if (applicantPhrases.isEmpty()) {
@@ -210,20 +264,22 @@ public class ApplicationBean implements Serializable {
             if (skillsStr != null && !skillsStr.isBlank()) {
                 for (String s : skillsStr.split(",")) {
                     String t = s.trim().toLowerCase();
-                    if (!t.isBlank()) applicantPhrases.add(t);
+                    if (!t.isBlank())
+                        applicantPhrases.add(t);
                 }
             }
         }
-        if (applicantPhrases.isEmpty()) return 0.0;
+        if (applicantPhrases.isEmpty())
+            return 0.0;
 
         List<String> reqSkills = offer.getRequiredSkills();
-        List<String> reqQuals  = offer.getRequiredQualifications();
+        List<String> reqQuals = offer.getRequiredQualifications();
         boolean hasSkills = reqSkills != null && !reqSkills.isEmpty();
-        boolean hasQuals  = reqQuals  != null && !reqQuals.isEmpty();
+        boolean hasQuals = reqQuals != null && !reqQuals.isEmpty();
 
         if (hasSkills || hasQuals) {
             double skillsScore = hasSkills ? listSimilarity(reqSkills, applicantPhrases) : 0.0;
-            double qualsScore  = hasQuals  ? listSimilarity(reqQuals,  applicantPhrases) : 0.0;
+            double qualsScore = hasQuals ? listSimilarity(reqQuals, applicantPhrases) : 0.0;
 
             double result = (hasSkills && hasQuals)
                     ? (0.7 * skillsScore + 0.3 * qualsScore)
@@ -233,35 +289,50 @@ public class ApplicationBean implements Serializable {
         }
 
         StringBuilder jobText = new StringBuilder();
-        if (offer.getTitle() != null) jobText.append(offer.getTitle()).append(" ");
-        if (offer.getDescription() != null) jobText.append(offer.getDescription());
+        if (offer.getTitle() != null)
+            jobText.append(offer.getTitle()).append(" ");
+        if (offer.getDescription() != null)
+            jobText.append(offer.getDescription());
 
         Set<String> jobTokens = tokenize(jobText.toString());
-        if (jobTokens.isEmpty()) return 0.0;
+        if (jobTokens.isEmpty())
+            return 0.0;
 
         Set<String> applicantTokens = new HashSet<>();
         for (String phrase : applicantPhrases) {
             applicantTokens.addAll(tokenize(phrase));
         }
-        if (applicantTokens.isEmpty()) return 0.0;
+        if (applicantTokens.isEmpty())
+            return 0.0;
 
         int matches = 0;
-        for (String s : applicantTokens) if (jobTokens.contains(s)) matches++;
+        for (String s : applicantTokens)
+            if (jobTokens.contains(s))
+                matches++;
 
         double raw = (matches * 100.0) / applicantTokens.size();
         return Math.round(raw * 10.0) / 10.0;
     }
-
 
     // --- Status options for UI ---
     public ch.unil.doplab.ApplicationStatus[] getAllStatuses() {
         return ch.unil.doplab.ApplicationStatus.values();
     }
 
+    public ch.unil.doplab.ApplicationStatus[] getEmployerStatuses() {
+        return new ch.unil.doplab.ApplicationStatus[] {
+                ch.unil.doplab.ApplicationStatus.In_review,
+                ch.unil.doplab.ApplicationStatus.Accepted,
+                ch.unil.doplab.ApplicationStatus.Rejected
+        };
+    }
+
     public String labelFor(ch.unil.doplab.ApplicationStatus st) {
-        if (st == null) return "";
+        if (st == null)
+            return "";
         return switch (st) {
             case In_review -> "In Review";
+            case Rejected -> "Declined";
             default -> st.name();
         };
     }

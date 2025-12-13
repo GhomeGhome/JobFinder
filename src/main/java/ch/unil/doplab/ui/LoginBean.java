@@ -86,7 +86,7 @@ public class LoginBean implements Serializable {
             loggedApplicant = app;
             loggedEmployer = null;
             loggedIn = true;
-            return "applicantDashBoard?faces-redirect=true";
+            return "applicantJobs?faces-redirect=true";
         }
     }
 
@@ -98,8 +98,13 @@ public class LoginBean implements Serializable {
         this.loggedEmployer = loggedEmployer;
     }
 
-    public ch.unil.doplab.Company getLoggedCompany() { return loggedCompany; }
-    public void setLoggedCompany(ch.unil.doplab.Company loggedCompany) { this.loggedCompany = loggedCompany; }
+    public ch.unil.doplab.Company getLoggedCompany() {
+        return loggedCompany;
+    }
+
+    public void setLoggedCompany(ch.unil.doplab.Company loggedCompany) {
+        this.loggedCompany = loggedCompany;
+    }
 
     public String logout() {
         loggedIn = false;
@@ -116,17 +121,47 @@ public class LoginBean implements Serializable {
                 .addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, msg, null));
     }
 
-    public boolean isEmployer() { return "EMPLOYER".equals(role); }
-    public boolean isApplicant() { return "APPLICANT".equals(role); }
+    public boolean isEmployer() {
+        return "EMPLOYER".equals(role);
+    }
 
-    public Employer getLoggedEmployer() { return loggedEmployer; }
-    public Applicant getLoggedApplicant() { return loggedApplicant; }
+    public boolean isApplicant() {
+        return "APPLICANT".equals(role);
+    }
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-    public boolean isLoggedIn() { return loggedIn; }
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
+    public Employer getLoggedEmployer() {
+        return loggedEmployer;
+    }
+
+    public Applicant getLoggedApplicant() {
+        return loggedApplicant;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public boolean isLoggedIn() {
+        return loggedIn;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
 }

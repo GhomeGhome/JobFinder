@@ -52,8 +52,8 @@
 
                         <h:column>
                             <f:facet name="header">Status</f:facet>
-                            <span class="status-badge">
-                                #{app.status}
+                            <span class="status-badge" style="#{applicantBean.statusStyle(app.status)}">
+                                #{applicantBean.statusLabel(app.status)}
                             </span>
                         </h:column>
 

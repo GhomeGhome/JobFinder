@@ -33,13 +33,14 @@ public class ApplicantBean implements Serializable {
 
     public List<Applicant> getAllApplicants() {
         // return appState.getAllApplicants().values().stream()
-        //         .collect(Collectors.toList()); // OLD
+        // .collect(Collectors.toList()); // OLD
         return client.getAllApplicants();
     }
 
     /**
      * NEW: Used by 'applicantApplications.xhtml'
-     * Fetches all applications from server, then filters for the logged-in applicant.
+     * Fetches all applications from server, then filters for the logged-in
+     * applicant.
      */
     public List<Application> getMyApplications() {
         if (!loginBean.isApplicant() || loginBean.getLoggedApplicant() == null) {
@@ -61,7 +62,8 @@ public class ApplicantBean implements Serializable {
      * NEW: Helper for the XHTML table to show Job Title
      */
     public String getJobTitle(UUID jobId) {
-        if (jobId == null) return "Unknown";
+        if (jobId == null)
+            return "Unknown";
         // JobOffer job = appState.getOffer(jobId); // OLD
         JobOffer job = client.getJobOffer(jobId); // NEW
         return (job != null) ? job.getTitle() : "Unknown Job";
@@ -71,11 +73,13 @@ public class ApplicantBean implements Serializable {
      * NEW: Helper for the XHTML table to show Company Name
      */
     public String getCompanyName(UUID jobId) {
-        if (jobId == null) return "Unknown";
+        if (jobId == null)
+            return "Unknown";
 
         // 1. Get the job to find the company ID
         JobOffer job = client.getJobOffer(jobId);
-        if (job == null || job.getCompanyId() == null) return "Unknown Company";
+        if (job == null || job.getCompanyId() == null)
+            return "Unknown Company";
 
         // 2. Get the company details
         Company comp = client.getCompany(job.getCompanyId());
@@ -89,7 +93,8 @@ public class ApplicantBean implements Serializable {
 
             if (success) {
                 // 2. CRITICAL STEP: Refresh the local session data
-                // We ask the server for the fresh Employer object (which includes the updated application list)
+                // We ask the server for the fresh Employer object (which includes the updated
+                // application list)
                 ch.unil.doplab.Employer freshEmployer = client.getEmployer(loginBean.getLoggedEmployer().getId());
 
                 // 3. Update the LoginBean so the page shows the new data
@@ -98,7 +103,8 @@ public class ApplicantBean implements Serializable {
                 }
 
                 FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Status updated to " + app.getStatus()));
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success",
+                                "Status updated to " + app.getStatus()));
             } else {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Could not update status."));
@@ -107,6 +113,26 @@ public class ApplicantBean implements Serializable {
         return null; // Reloads the page with the fresh data
     }
 
+    public String statusLabel(ch.unil.doplab.ApplicationStatus st) {
+        if (st == null)
+            return "";
+        return switch (st) {
+            case In_review -> "In Review";
+            case Rejected -> "Declined";
+            default -> st.name();
+        };
+    }
 
+    public String statusStyle(ch.unil.doplab.ApplicationStatus st) {
+        if (st == null)
+            return "";
+        return switch (st) {
+            case Rejected -> "background-color:#fee2e2; color:#b91c1c;";
+            case Accepted -> "background-color:#dcfce7; color:#15803d;";
+            case In_review -> "background-color:#fef9c3; color:#92400e;";
+            case Submitted -> "background-color:#e5e7eb; color:#374151;";
+            default -> "";
+        };
+    }
 
 }

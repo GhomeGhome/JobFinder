@@ -1376,15 +1376,31 @@ public class ApplicationState {
     }
 
     public List<Application> listApplicationsByOfferId(UUID jobOfferId) {
-        return applications.values().stream()
-                .filter(a -> jobOfferId.equals(a.getJobOfferId()))
-                .collect(Collectors.toList());
+        List<Application> list = em.createQuery(
+                "SELECT a FROM Application a WHERE a.jobOfferId = :jobOfferId", Application.class)
+                .setParameter("jobOfferId", jobOfferId)
+                .getResultList();
+
+        for (Application a : list) {
+            if (a != null && a.getId() != null) {
+                applications.put(a.getId(), a);
+            }
+        }
+        return list;
     }
 
     public List<Application> listApplicationsByApplicantId(UUID applicantId) {
-        return applications.values().stream()
-                .filter(a -> applicantId.equals(a.getApplicantId()))
-                .collect(Collectors.toList());
+        List<Application> list = em.createQuery(
+                "SELECT a FROM Application a WHERE a.applicantId = :applicantId", Application.class)
+                .setParameter("applicantId", applicantId)
+                .getResultList();
+
+        for (Application a : list) {
+            if (a != null && a.getId() != null) {
+                applications.put(a.getId(), a);
+            }
+        }
+        return list;
     }
 
     @Transactional

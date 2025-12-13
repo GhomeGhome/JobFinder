@@ -3,7 +3,13 @@
                 xmlns:h="http://xmlns.jcp.org/jsf/html"
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
                 template="/TEMPLATES/employerTemplate.xhtml">
+
+    <f:metadata>
+        <f:viewParam name="jobId" value="#{interviewBean.selectedJobOfferId}" />
+        <f:viewParam name="applicantId" value="#{interviewBean.selectedApplicantId}" />
+    </f:metadata>
 
     <ui:define name="title">
         Interviews – JobFinder
@@ -59,10 +65,10 @@
                 <!-- Date & time -->
                 <div class="field">
                     <span class="field-label">Date &amp; time</span>
-                    <!-- simple text input with DateTime converter; pattern can be whatever you like -->
                     <h:inputText value="#{interviewBean.scheduledAt}"
                                  styleClass="input-full"
-                                 type="date"> <f:convertDateTime pattern="yyyy-MM-dd" type="localDate"/>
+                                 pt:type="date">
+                        <f:convertDateTime pattern="yyyy-MM-dd" />
                     </h:inputText>
                 </div>
 
