@@ -55,6 +55,21 @@ public class UserBean implements Serializable {
         }
 
         if (success) {
+            // Refresh current user in session so subsequent renders show latest values (avatar, skills, etc.)
+            try {
+                if (loginBean.isApplicant() && loginBean.getLoggedApplicant() != null) {
+                    var fresh = client.getApplicant(loginBean.getLoggedApplicant().getId());
+                    if (fresh != null) loginBean.setLoggedApplicant(fresh);
+                } else if (loginBean.isEmployer() && loginBean.getLoggedEmployer() != null) {
+                    var freshEmp = client.getEmployer(loginBean.getLoggedEmployer().getId());
+                    if (freshEmp != null) loginBean.setLoggedEmployer(freshEmp);
+                    if (freshEmp != null && freshEmp.getCompanyId() != null) {
+                        var freshCompany = client.getCompany(freshEmp.getCompanyId());
+                        if (freshCompany != null) loginBean.setLoggedCompany(freshCompany);
+                    }
+                }
+            } catch (Exception ignored) {}
+
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Profile updated."));
         } else {

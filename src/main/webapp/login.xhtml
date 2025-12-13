@@ -5,12 +5,16 @@
 <h:head>
     <title>Login - JobFinder</title>
 <!--    <h:outputStylesheet library="css" name="styles.css" />-->
-    <link rel="stylesheet" type="text/css" href="/jobfinder/resources/css/styles.css" />
+    <link rel="stylesheet" type="text/css" href="#{request.contextPath}/resources/css/styles.css" />
 </h:head>
 <h:body class="page-bg">
     <div class="center-wrapper">
         <div class="card login-card">
-            <h1 class="app-title">JobFinder</h1>
+            <img src="#{request.contextPath}/resources/img/jobfinder-logo.jpeg"
+                 alt="JobFinder logo"
+                 style="max-width:260px; height:auto; display:block; margin:0 auto 8px;"
+                 onerror="this.style.display='none'; var t=document.getElementById('loginLogoText'); if(t) t.style.display='block';" />
+            <span id="loginLogoText" class="app-title" style="display:none; text-align:center;">JobFinder</span>
             <p class="app-subtitle">Sign in as applicant or employer</p>
 
             <h:form>

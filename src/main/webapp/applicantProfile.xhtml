@@ -85,7 +85,7 @@
                                     <li style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
                                         #{s['label']}
                                         <h:commandLink value="Add" style="color:#2563eb; font-weight:bold;" action="#{skillBean.addSkill(s)}">
-                                            <f:ajax render="selectedSkillsPanel" />
+                                            <f:ajax render="selectedSkillsPanel :profileForm:manualSkillsInput" />
                                         </h:commandLink>
                                     </li>
                                 </ui:repeat>
@@ -100,7 +100,7 @@
                                     <span class="chip" style="background:#e0f2fe; color:#0284c7; padding:4px 8px; border-radius:12px; margin-right:5px; font-size:12px;">
                                         #{s['label']}
                                         <h:commandLink value="×" action="#{skillBean.removeSkill(s)}" style="margin-left:4px; color:#0284c7; text-decoration:none;">
-                                            <f:ajax render="selectedSkillsPanel" />
+                                            <f:ajax render="selectedSkillsPanel :profileForm:manualSkillsInput" />
                                         </h:commandLink>
                                     </span>
                                 </ui:repeat>
@@ -112,7 +112,7 @@
 
 
             <div class="card" style="flex-grow: 1; min-width: 300px;">
-                <h:form>
+                <h:form id="profileForm">
                     <input type="hidden" name="hiddenAvatarUrl" id="hiddenAvatarUrlForm"
                            value="#{loginBean.loggedApplicant.photoUrl}" />
                     <h:messages globalOnly="true"
@@ -155,20 +155,10 @@
                         <small style="color: #6b7280">Paste a link to your PDF or Google Doc, or upload a PDF below.</small>
                     </div>
 
-                    <h:form enctype="multipart/form-data" style="margin-top:8px;">
-                        <div class="field">
-                            <span class="field-label">Upload PDF</span>
-                            <h:inputFile value="#{uploadBean.cvFile}" styleClass="input-full" />
-                        </div>
-                        <h:commandButton value="Upload CV (PDF)"
-                                         action="#{uploadBean.uploadCv}"
-                                         styleClass="btn btn-light" />
-                        <h:messages styleClass="form-messages" />
-                    </h:form>
-
                     <div class="field">
                         <span class="field-label">Manual Skills (Optional)</span>
-                        <h:inputText value="#{loginBean.loggedApplicant.skillsAsString}"
+                        <h:inputText id="manualSkillsInput"
+                                     value="#{loginBean.loggedApplicant.skillsAsString}"
                                      styleClass="input-full" />
                         <small style="color: #6b7280">E.g., [Java, Python, SQL]</small>
                     </div>
@@ -196,6 +186,17 @@
                                          action="#{userBean.updateProfile}"
                                          styleClass="btn btn-primary btn-full" />
                     </div>
+                </h:form>
+
+                <h:form enctype="multipart/form-data" style="margin-top:8px;">
+                    <div class="field">
+                        <span class="field-label">Upload PDF</span>
+                        <h:inputFile value="#{uploadBean.cvFile}" styleClass="input-full" />
+                    </div>
+                    <h:commandButton value="Upload CV (PDF)"
+                                     action="#{uploadBean.uploadCv}"
+                                     styleClass="btn btn-light" />
+                    <h:messages styleClass="form-messages" />
                 </h:form>
             </div>
         </div>

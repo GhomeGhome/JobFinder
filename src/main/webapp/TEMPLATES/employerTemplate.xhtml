@@ -22,7 +22,11 @@
 
             <!-- LEFT: logo + nav links -->
             <div class="top-bar-left">
-                <span class="app-logo">JobFinder</span>
+                <img src="#{request.contextPath}/resources/img/jobfinder-logo.jpeg"
+                     alt="JobFinder"
+                     style="height:28px; width:auto; display:inline-block; margin-right:16px;"
+                     onerror="this.style.display='none'; var t=document.getElementById('empTopLogoText'); if(t) t.style.display='inline-block';" />
+                <span id="empTopLogoText" class="app-logo" style="display:none; margin-right:16px;">JobFinder</span>
                 <div class="top-bar-section">
                     <h:link outcome="/employerDashBoard.xhtml"
                             value="Job posts"

@@ -56,8 +56,7 @@ public class ApplicationState {
             employers.put(e.getId(), e);
         }
         for (Applicant a : em.createQuery(
-                "SELECT DISTINCT a FROM Applicant a LEFT JOIN FETCH a.skills", Applicant.class
-        ).getResultList()) {
+                "SELECT DISTINCT a FROM Applicant a LEFT JOIN FETCH a.skills", Applicant.class).getResultList()) {
             applicants.put(a.getId(), a);
         }
         for (Company c : em.createQuery("SELECT c FROM Company c", Company.class).getResultList()) {
@@ -74,23 +73,29 @@ public class ApplicationState {
     }
 
     /**
-     * Rebuilds "inverse" lists in RAM only (jobOfferIds, applicationIds, employerIds, etc.)
+     * Rebuilds "inverse" lists in RAM only (jobOfferIds, applicationIds,
+     * employerIds, etc.)
      * This mirrors what StudyBuddy did.
      */
     private void rebuildInverseRelations() {
 
         for (Employer e : employers.values()) {
-            if (e.getJobOfferIds() != null) e.getJobOfferIds().clear();
+            if (e.getJobOfferIds() != null)
+                e.getJobOfferIds().clear();
         }
         for (Company c : companies.values()) {
-            if (c.getEmployerIds() != null) c.getEmployerIds().clear();
-            if (c.getJobOfferIds() != null) c.getJobOfferIds().clear();
+            if (c.getEmployerIds() != null)
+                c.getEmployerIds().clear();
+            if (c.getJobOfferIds() != null)
+                c.getJobOfferIds().clear();
         }
         for (Applicant a : applicants.values()) {
-            if (a.getApplicationIds() != null) a.getApplicationIds().clear();
+            if (a.getApplicationIds() != null)
+                a.getApplicationIds().clear();
         }
         for (JobOffer o : jobOffers.values()) {
-            if (o.getApplicationIds() != null) o.getApplicationIds().clear();
+            if (o.getApplicationIds() != null)
+                o.getApplicationIds().clear();
         }
 
         // Link JobOffer -> Employer and Company
@@ -98,23 +103,27 @@ public class ApplicationState {
             UUID empId = o.getEmployerId();
             if (empId != null) {
                 Employer e = employers.get(empId);
-                if (e != null) e.addJobOfferId(o.getId());
+                if (e != null)
+                    e.addJobOfferId(o.getId());
             }
 
             UUID compId = o.getCompanyId();
             if (compId != null) {
                 Company c = companies.get(compId);
-                if (c != null) c.addJobOfferId(o.getId());
+                if (c != null)
+                    c.addJobOfferId(o.getId());
             }
         }
 
         // Link Application -> JobOffer and Applicant
         for (Application a : applications.values()) {
             JobOffer offer = jobOffers.get(a.getJobOfferId());
-            if (offer != null) offer.addApplicationId(a.getId());
+            if (offer != null)
+                offer.addApplicationId(a.getId());
 
             Applicant ap = applicants.get(a.getApplicantId());
-            if (ap != null) ap.addApplicationId(a.getId());
+            if (ap != null)
+                ap.addApplicationId(a.getId());
         }
 
         // Link Company <-> owner Employer
@@ -142,17 +151,45 @@ public class ApplicationState {
     // GETTERS (RAM cache)
     // ======================================================
 
-    public Map<UUID, Employer> getAllEmployers() { return employers; }
-    public Map<UUID, Applicant> getAllApplicants() { return applicants; }
-    public Map<UUID, Company> getAllCompanies() { return companies; }
-    public Map<UUID, JobOffer> getAllOffers() { return jobOffers; }
-    public Map<UUID, Application> getAllApplications() { return applications; }
+    public Map<UUID, Employer> getAllEmployers() {
+        return employers;
+    }
 
-    public Employer getEmployer(UUID id) { return employers.get(id); }
-    public Applicant getApplicant(UUID id) { return applicants.get(id); }
-    public Company getCompany(UUID id) { return companies.get(id); }
-    public JobOffer getOffer(UUID id) { return jobOffers.get(id); }
-    public Application getApplication(UUID id) { return applications.get(id); }
+    public Map<UUID, Applicant> getAllApplicants() {
+        return applicants;
+    }
+
+    public Map<UUID, Company> getAllCompanies() {
+        return companies;
+    }
+
+    public Map<UUID, JobOffer> getAllOffers() {
+        return jobOffers;
+    }
+
+    public Map<UUID, Application> getAllApplications() {
+        return applications;
+    }
+
+    public Employer getEmployer(UUID id) {
+        return employers.get(id);
+    }
+
+    public Applicant getApplicant(UUID id) {
+        return applicants.get(id);
+    }
+
+    public Company getCompany(UUID id) {
+        return companies.get(id);
+    }
+
+    public JobOffer getOffer(UUID id) {
+        return jobOffers.get(id);
+    }
+
+    public Application getApplication(UUID id) {
+        return applications.get(id);
+    }
 
     // ======================================================
     // EMPLOYERS (DB + cache)
@@ -160,9 +197,11 @@ public class ApplicationState {
 
     @Transactional
     public Employer addEmployer(Employer e) {
-        if (e == null) throw new IllegalArgumentException("Employer cannot be null");
+        if (e == null)
+            throw new IllegalArgumentException("Employer cannot be null");
 
-        if (e.getId() == null) e.setId(UUID.randomUUID());
+        if (e.getId() == null)
+            e.setId(UUID.randomUUID());
         em.persist(e);
 
         employers.put(e.getId(), e);
@@ -170,7 +209,8 @@ public class ApplicationState {
         // link to company in RAM (optional)
         if (e.getCompanyId() != null) {
             Company c = companies.get(e.getCompanyId());
-            if (c != null) c.addEmployerId(e.getId());
+            if (c != null)
+                c.addEmployerId(e.getId());
         }
 
         return e;
@@ -179,22 +219,43 @@ public class ApplicationState {
     @Transactional
     public boolean setEmployer(UUID id, Employer updated) {
         Employer existing = em.find(Employer.class, id);
-        if (existing == null) return false;
+        if (existing == null)
+            return false;
 
-        updated.setId(id);
+        // Update managed entity field-by-field to avoid wiping persisted values
+        // when the client submits a partial/damaged payload.
+        if (updated.getUsername() != null && !updated.getUsername().isBlank())
+            existing.setUsername(updated.getUsername());
+        if (updated.getPassword() != null && !updated.getPassword().isBlank())
+            existing.setPassword(updated.getPassword());
+        if (updated.getFirstName() != null && !updated.getFirstName().isBlank())
+            existing.setFirstName(updated.getFirstName());
+        if (updated.getLastName() != null && !updated.getLastName().isBlank())
+            existing.setLastName(updated.getLastName());
+        if (updated.getEmail() != null && !updated.getEmail().isBlank())
+            existing.setEmail(updated.getEmail());
+        if (updated.getPhotoUrl() != null && !updated.getPhotoUrl().isBlank())
+            existing.setPhotoUrl(updated.getPhotoUrl());
 
-        // preserve relationship if client didn't send it
-        if (updated.getCompanyId() == null) updated.setCompanyId(existing.getCompanyId());
+        if (updated.getDescriptionInfo() != null)
+            existing.setDescriptionInfo(updated.getDescriptionInfo());
+        if (updated.getEnterpriseName() != null && !updated.getEnterpriseName().isBlank())
+            existing.setEnterpriseName(updated.getEnterpriseName());
 
-        Employer merged = em.merge(updated);
-        employers.put(id, merged);
+        // Preserve relationship if client didn't send it
+        if (updated.getCompanyId() != null) {
+            existing.setCompanyId(updated.getCompanyId());
+        }
+
+        employers.put(id, existing);
         return true;
     }
 
     @Transactional
     public boolean removeEmployer(UUID id) {
         Employer existing = em.find(Employer.class, id);
-        if (existing == null) return false;
+        if (existing == null)
+            return false;
 
         // Optional: what to do with job offers of this employer?
         // For safety, we can delete them (and their applications) too.
@@ -219,7 +280,8 @@ public class ApplicationState {
             Company c = companies.get(companyId);
             if (c != null) {
                 c.removeEmployerId(id);
-                if (id.equals(c.getOwnerEmployerId())) c.setOwnerEmployerId(null);
+                if (id.equals(c.getOwnerEmployerId()))
+                    c.setOwnerEmployerId(null);
             }
         }
 
@@ -232,9 +294,11 @@ public class ApplicationState {
 
     @Transactional
     public Applicant addApplicant(Applicant a) {
-        if (a == null) throw new IllegalArgumentException("Applicant cannot be null");
+        if (a == null)
+            throw new IllegalArgumentException("Applicant cannot be null");
 
-        if (a.getId() == null) a.setId(UUID.randomUUID());
+        if (a.getId() == null)
+            a.setId(UUID.randomUUID());
         em.persist(a);
 
         applicants.put(a.getId(), a);
@@ -244,7 +308,8 @@ public class ApplicationState {
     @Transactional
     public boolean setApplicant(UUID id, Applicant updated) {
         Applicant existing = em.find(Applicant.class, id);
-        if (existing == null) return false;
+        if (existing == null)
+            return false;
 
         updated.setId(id);
 
@@ -256,7 +321,8 @@ public class ApplicationState {
     @Transactional
     public boolean removeApplicant(UUID id) {
         Applicant existing = em.find(Applicant.class, id);
-        if (existing == null) return false;
+        if (existing == null)
+            return false;
 
         // Delete applications of this applicant (DB + RAM)
         List<UUID> appIds = applications.values().stream()
@@ -281,9 +347,11 @@ public class ApplicationState {
 
     @Transactional
     public Company addCompany(Company c) {
-        if (c == null) throw new IllegalArgumentException("Company cannot be null");
+        if (c == null)
+            throw new IllegalArgumentException("Company cannot be null");
 
-        if (c.getId() == null) c.setId(UUID.randomUUID());
+        if (c.getId() == null)
+            c.setId(UUID.randomUUID());
         em.persist(c);
 
         companies.put(c.getId(), c);
@@ -291,7 +359,8 @@ public class ApplicationState {
         // link owner employer in RAM (optional)
         if (c.getOwnerEmployerId() != null) {
             Employer owner = employers.get(c.getOwnerEmployerId());
-            if (owner != null) owner.setCompanyId(c.getId());
+            if (owner != null)
+                owner.setCompanyId(c.getId());
             c.addEmployerId(c.getOwnerEmployerId());
         }
 
@@ -301,12 +370,14 @@ public class ApplicationState {
     @Transactional
     public boolean setCompany(UUID id, Company updated) {
         Company existing = em.find(Company.class, id);
-        if (existing == null) return false;
+        if (existing == null)
+            return false;
 
         updated.setId(id);
 
         // preserve owner if not sent
-        if (updated.getOwnerEmployerId() == null) updated.setOwnerEmployerId(existing.getOwnerEmployerId());
+        if (updated.getOwnerEmployerId() == null)
+            updated.setOwnerEmployerId(existing.getOwnerEmployerId());
 
         Company merged = em.merge(updated);
         companies.put(id, merged);
@@ -316,14 +387,16 @@ public class ApplicationState {
     @Transactional
     public boolean removeCompany(UUID id) {
         Company existing = em.find(Company.class, id);
-        if (existing == null) return false;
+        if (existing == null)
+            return false;
 
         // Detach company from job offers (or delete offers – here we detach)
         for (JobOffer o : jobOffers.values()) {
             if (id.equals(o.getCompanyId())) {
                 o.setCompanyId(null);
                 JobOffer managedOffer = em.find(JobOffer.class, o.getId());
-                if (managedOffer != null) managedOffer.setCompanyId(null);
+                if (managedOffer != null)
+                    managedOffer.setCompanyId(null);
             }
         }
 
@@ -332,7 +405,8 @@ public class ApplicationState {
             if (id.equals(e.getCompanyId())) {
                 e.setCompanyId(null);
                 Employer managedEmp = em.find(Employer.class, e.getId());
-                if (managedEmp != null) managedEmp.setCompanyId(null);
+                if (managedEmp != null)
+                    managedEmp.setCompanyId(null);
             }
         }
 
@@ -344,7 +418,7 @@ public class ApplicationState {
     }
 
     // ======================================================
-    // JOB OFFERS (DB + cache)  -- IMPORTANT FIXES HERE
+    // JOB OFFERS (DB + cache) -- IMPORTANT FIXES HERE
     // ======================================================
 
     /**
@@ -364,9 +438,12 @@ public class ApplicationState {
                     try {
                         var ta = a.getCreatedAt();
                         var tb = b.getCreatedAt();
-                        if (ta == null && tb == null) return 0;
-                        if (ta == null) return 1;
-                        if (tb == null) return -1;
+                        if (ta == null && tb == null)
+                            return 0;
+                        if (ta == null)
+                            return 1;
+                        if (tb == null)
+                            return -1;
                         return tb.compareTo(ta);
                     } catch (Exception ignore) {
                         return 0;
@@ -380,7 +457,8 @@ public class ApplicationState {
     public JobOffer findJobOffer(UUID id) {
         // prefer cache; fall back to DB if needed
         JobOffer o = jobOffers.get(id);
-        if (o != null) return o;
+        if (o != null)
+            return o;
 
         JobOffer db = em.find(JobOffer.class, id);
         if (db != null) {
@@ -391,24 +469,29 @@ public class ApplicationState {
 
     @Transactional
     public JobOffer createJobOffer(JobOffer offer) {
-        if (offer == null) throw new IllegalArgumentException("JobOffer cannot be null");
-        if (offer.getEmployerId() == null) throw new IllegalArgumentException("JobOffer must have employerId");
+        if (offer == null)
+            throw new IllegalArgumentException("JobOffer cannot be null");
+        if (offer.getEmployerId() == null)
+            throw new IllegalArgumentException("JobOffer must have employerId");
 
         // ensure ID exists if your entity doesn't generate it
-        if (offer.getId() == null) offer.setId(UUID.randomUUID());
+        if (offer.getId() == null)
+            offer.setId(UUID.randomUUID());
 
         em.persist(offer);
 
-        // ✅ CRITICAL: update cache
+        // update cache
         jobOffers.put(offer.getId(), offer);
 
         // link inverse in RAM
         Employer e = employers.get(offer.getEmployerId());
-        if (e != null) e.addJobOfferId(offer.getId());
+        if (e != null)
+            e.addJobOfferId(offer.getId());
 
         if (offer.getCompanyId() != null) {
             Company c = companies.get(offer.getCompanyId());
-            if (c != null) c.addJobOfferId(offer.getId());
+            if (c != null)
+                c.addJobOfferId(offer.getId());
         }
 
         return offer;
@@ -416,10 +499,12 @@ public class ApplicationState {
 
     @Transactional
     public JobOffer updateJobOffer(UUID id, JobOffer updated) {
-        if (updated == null) throw new IllegalArgumentException("JobOffer cannot be null");
+        if (updated == null)
+            throw new IllegalArgumentException("JobOffer cannot be null");
 
         JobOffer existing = em.find(JobOffer.class, id);
-        if (existing == null) return null;
+        if (existing == null)
+            return null;
 
         // apply allowed fields
         existing.setTitle(updated.getTitle());
@@ -429,7 +514,8 @@ public class ApplicationState {
         existing.setEndDate(updated.getEndDate());
         existing.setCompanyId(updated.getCompanyId());
 
-        if (updated.getStatus() != null) existing.setStatus(updated.getStatus());
+        if (updated.getStatus() != null)
+            existing.setStatus(updated.getStatus());
 
         existing.setRequiredSkills(updated.getRequiredSkills());
         existing.setRequiredQualifications(updated.getRequiredQualifications());
@@ -442,7 +528,8 @@ public class ApplicationState {
     @Transactional
     public boolean deleteJobOffer(UUID id) {
         JobOffer existing = em.find(JobOffer.class, id);
-        if (existing == null) return false;
+        if (existing == null)
+            return false;
 
         // delete dependent applications (DB + RAM)
         List<UUID> dependentApps = applications.values().stream()
@@ -461,11 +548,13 @@ public class ApplicationState {
         jobOffers.remove(id);
 
         Employer e = employers.get(existing.getEmployerId());
-        if (e != null) e.removeJobOfferId(id);
+        if (e != null)
+            e.removeJobOfferId(id);
 
         if (existing.getCompanyId() != null) {
             Company c = companies.get(existing.getCompanyId());
-            if (c != null) c.removeJobOfferId(id);
+            if (c != null)
+                c.removeJobOfferId(id);
         }
 
         return true;
@@ -474,7 +563,8 @@ public class ApplicationState {
     @Transactional
     public JobOffer publishJobOffer(UUID offerId, UUID employerId) {
         JobOffer o = em.find(JobOffer.class, offerId);
-        if (o == null) throw new NoSuchElementException();
+        if (o == null)
+            throw new NoSuchElementException();
         if (!Objects.equals(o.getEmployerId(), employerId)) {
             throw new SecurityException("Employer cannot publish another employer's offer.");
         }
@@ -486,8 +576,10 @@ public class ApplicationState {
     @Transactional
     public JobOffer closeJobOffer(UUID offerId, UUID employerId) {
         JobOffer o = em.find(JobOffer.class, offerId);
-        if (o == null) throw new NoSuchElementException();
-        if (!Objects.equals(o.getEmployerId(), employerId)) throw new SecurityException();
+        if (o == null)
+            throw new NoSuchElementException();
+        if (!Objects.equals(o.getEmployerId(), employerId))
+            throw new SecurityException();
         o.setStatus(JobOfferStatus.Closed);
         jobOffers.put(o.getId(), o);
         return o;
@@ -496,33 +588,39 @@ public class ApplicationState {
     @Transactional
     public JobOffer reopenJobOffer(UUID offerId, UUID employerId) {
         JobOffer o = em.find(JobOffer.class, offerId);
-        if (o == null) throw new NoSuchElementException();
-        if (!Objects.equals(o.getEmployerId(), employerId)) throw new SecurityException();
+        if (o == null)
+            throw new NoSuchElementException();
+        if (!Objects.equals(o.getEmployerId(), employerId))
+            throw new SecurityException();
         o.setStatus(JobOfferStatus.Reopened);
         jobOffers.put(o.getId(), o);
         return o;
     }
 
     // ======================================================
-    // APPLICATIONS (DB + cache)  -- IMPORTANT FIXES HERE
+    // APPLICATIONS (DB + cache) -- IMPORTANT FIXES HERE
     // ======================================================
 
     @Transactional
     public Application addApplication(Application a) {
-        if (a == null) throw new IllegalArgumentException("Application cannot be null");
+        if (a == null)
+            throw new IllegalArgumentException("Application cannot be null");
         if (a.getJobOfferId() == null || a.getApplicantId() == null) {
             throw new IllegalArgumentException("jobOfferId and applicantId are required");
         }
 
-        // ✅ Validate against DB (so it works even if caches were missing something)
+        // Validate against DB (so it works even if caches were missing something)
         JobOffer offer = em.find(JobOffer.class, a.getJobOfferId());
-        if (offer == null) throw new IllegalArgumentException("Unknown JobOffer: " + a.getJobOfferId());
+        if (offer == null)
+            throw new IllegalArgumentException("Unknown JobOffer: " + a.getJobOfferId());
 
         Applicant applicant = em.find(Applicant.class, a.getApplicantId());
-        if (applicant == null) throw new IllegalArgumentException("Unknown Applicant: " + a.getApplicantId());
+        if (applicant == null)
+            throw new IllegalArgumentException("Unknown Applicant: " + a.getApplicantId());
 
         // ensure ID if not generated by entity
-        if (a.getId() == null) a.setId(UUID.randomUUID());
+        if (a.getId() == null)
+            a.setId(UUID.randomUUID());
 
         // compute match score if not provided (use fresh DB entities)
         if (a.getMatchScore() == null) {
@@ -531,7 +629,7 @@ public class ApplicationState {
 
         em.persist(a);
 
-        // ✅ update caches (fresh)
+        // update caches (fresh)
         applications.put(a.getId(), a);
         jobOffers.put(offer.getId(), offer);
         applicants.put(applicant.getId(), applicant);
@@ -539,8 +637,10 @@ public class ApplicationState {
         JobOffer cachedOffer = jobOffers.get(offer.getId());
         Applicant cachedApplicant = applicants.get(applicant.getId());
 
-        if (cachedOffer != null) cachedOffer.addApplicationId(a.getId());
-        if (cachedApplicant != null) cachedApplicant.addApplicationId(a.getId());
+        if (cachedOffer != null)
+            cachedOffer.addApplicationId(a.getId());
+        if (cachedApplicant != null)
+            cachedApplicant.addApplicationId(a.getId());
 
         return a;
     }
@@ -548,7 +648,8 @@ public class ApplicationState {
     @Transactional
     public Application updateApplicationMatchScore(UUID id, double score) {
         Application managed = em.find(Application.class, id);
-        if (managed == null) throw new NotFoundException("Application not found: " + id);
+        if (managed == null)
+            throw new NotFoundException("Application not found: " + id);
 
         managed.setMatchScore(score);
 
@@ -560,7 +661,8 @@ public class ApplicationState {
     @Transactional
     public Application updateApplicationStatus(UUID id, ApplicationStatus status) {
         Application managed = em.find(Application.class, id);
-        if (managed == null) throw new NotFoundException("Application not found: " + id);
+        if (managed == null)
+            throw new NotFoundException("Application not found: " + id);
 
         managed.setStatus(status);
         managed.setUpdatedAt(LocalDateTime.now());
@@ -572,14 +674,17 @@ public class ApplicationState {
     @Transactional
     public boolean removeApplication(UUID id) {
         Application managed = em.find(Application.class, id);
-        if (managed == null) return false;
+        if (managed == null)
+            return false;
 
         // update inverse RAM relations first
         JobOffer o = jobOffers.get(managed.getJobOfferId());
-        if (o != null) o.removeApplicationId(id);
+        if (o != null)
+            o.removeApplicationId(id);
 
         Applicant ap = applicants.get(managed.getApplicantId());
-        if (ap != null) ap.removeApplicationId(id);
+        if (ap != null)
+            ap.removeApplicationId(id);
 
         Application toRemove = em.merge(managed);
         em.remove(toRemove);
@@ -622,7 +727,8 @@ public class ApplicationState {
 
     public String getApplicantNameById(UUID applicantId) {
         Applicant a = applicants.get(applicantId);
-        if (a == null) return "Unknown";
+        if (a == null)
+            return "Unknown";
         String fn = a.getFirstName() == null ? "" : a.getFirstName();
         String ln = a.getLastName() == null ? "" : a.getLastName();
         String name = (fn + " " + ln).trim();
@@ -631,7 +737,8 @@ public class ApplicationState {
 
     public String getCompanyNameByJobId(UUID jobId) {
         JobOffer offer = jobOffers.get(jobId);
-        if (offer == null) return "Unknown";
+        if (offer == null)
+            return "Unknown";
         Company c = companies.get(offer.getCompanyId());
         return (c != null && c.getName() != null) ? c.getName() : "Unknown";
     }
@@ -641,30 +748,37 @@ public class ApplicationState {
     // ======================================================
 
     private static Set<String> tokenize(String text) {
-        if (text == null) return Collections.emptySet();
+        if (text == null)
+            return Collections.emptySet();
 
         String[] raw = text.toLowerCase().split("[^a-z0-9+]+");
         Set<String> tokens = new HashSet<>();
         for (String t : raw) {
             t = t.trim();
-            if (t.length() >= 2) tokens.add(t);
+            if (t.length() >= 2)
+                tokens.add(t);
         }
         return tokens;
     }
 
     private static double phraseSimilarity(String a, String b) {
-        if (a == null || b == null) return 0.0;
+        if (a == null || b == null)
+            return 0.0;
         String sa = a.trim().toLowerCase();
         String sb = b.trim().toLowerCase();
-        if (sa.isEmpty() || sb.isEmpty()) return 0.0;
+        if (sa.isEmpty() || sb.isEmpty())
+            return 0.0;
 
-        if (sa.equals(sb)) return 1.0;                // exact
-        if (sa.contains(sb) || sb.contains(sa)) return 0.7; // contains
+        if (sa.equals(sb))
+            return 1.0; // exact
+        if (sa.contains(sb) || sb.contains(sa))
+            return 0.7; // contains
 
         // token Jaccard overlap as soft similarity
         java.util.Set<String> ta = tokenize(sa);
         java.util.Set<String> tb = tokenize(sb);
-        if (ta.isEmpty() || tb.isEmpty()) return 0.0;
+        if (ta.isEmpty() || tb.isEmpty())
+            return 0.0;
         java.util.Set<String> inter = new java.util.HashSet<>(ta);
         inter.retainAll(tb);
         java.util.Set<String> union = new java.util.HashSet<>(ta);
@@ -672,23 +786,29 @@ public class ApplicationState {
         return union.isEmpty() ? 0.0 : (inter.size() * 1.0) / union.size();
     }
 
-    private static double listSimilarity(java.util.Collection<String> requirements, java.util.Collection<String> candidatePhrases) {
-        if (requirements == null || requirements.isEmpty()) return 0.0;
-        if (candidatePhrases == null || candidatePhrases.isEmpty()) return 0.0;
+    private static double listSimilarity(java.util.Collection<String> requirements,
+            java.util.Collection<String> candidatePhrases) {
+        if (requirements == null || requirements.isEmpty())
+            return 0.0;
+        if (candidatePhrases == null || candidatePhrases.isEmpty())
+            return 0.0;
 
         double sum = 0.0;
         int n = 0;
         for (String r : requirements) {
-            if (r == null || r.isBlank()) continue;
+            if (r == null || r.isBlank())
+                continue;
             double best = 0.0;
             for (String c : candidatePhrases) {
                 best = Math.max(best, phraseSimilarity(r, c));
-                if (best >= 1.0) break;
+                if (best >= 1.0)
+                    break;
             }
             sum += best;
             n++;
         }
-        if (n == 0) return 0.0;
+        if (n == 0)
+            return 0.0;
         return (sum / n) * 100.0;
     }
 
@@ -697,7 +817,8 @@ public class ApplicationState {
         java.util.LinkedHashSet<String> applicantPhrases = new java.util.LinkedHashSet<>();
         if (applicant.getSkills() != null) {
             for (String s : applicant.getSkills()) {
-                if (s != null && !s.isBlank()) applicantPhrases.add(s.trim().toLowerCase());
+                if (s != null && !s.isBlank())
+                    applicantPhrases.add(s.trim().toLowerCase());
             }
         }
         if (applicantPhrases.isEmpty()) {
@@ -705,21 +826,23 @@ public class ApplicationState {
             if (skillsStr != null && !skillsStr.isBlank()) {
                 for (String s : skillsStr.split(",")) {
                     String t = s.trim().toLowerCase();
-                    if (!t.isBlank()) applicantPhrases.add(t);
+                    if (!t.isBlank())
+                        applicantPhrases.add(t);
                 }
             }
         }
-        if (applicantPhrases.isEmpty()) return 0.0;
+        if (applicantPhrases.isEmpty())
+            return 0.0;
 
         java.util.List<String> reqSkills = offer.getRequiredSkills();
         java.util.List<String> reqQuals = offer.getRequiredQualifications();
 
         boolean hasSkills = reqSkills != null && !reqSkills.isEmpty();
-        boolean hasQuals  = reqQuals  != null && !reqQuals.isEmpty();
+        boolean hasQuals = reqQuals != null && !reqQuals.isEmpty();
 
         if (hasSkills || hasQuals) {
             double skillsScore = hasSkills ? listSimilarity(reqSkills, applicantPhrases) : 0.0;
-            double qualsScore  = hasQuals  ? listSimilarity(reqQuals,  applicantPhrases) : 0.0;
+            double qualsScore = hasQuals ? listSimilarity(reqQuals, applicantPhrases) : 0.0;
 
             double result;
             if (hasSkills && hasQuals) {
@@ -732,19 +855,25 @@ public class ApplicationState {
 
         // Fallback: title/description token overlap
         StringBuilder jobText = new StringBuilder();
-        if (offer.getTitle() != null) jobText.append(offer.getTitle()).append(" ");
-        if (offer.getDescription() != null) jobText.append(offer.getDescription());
+        if (offer.getTitle() != null)
+            jobText.append(offer.getTitle()).append(" ");
+        if (offer.getDescription() != null)
+            jobText.append(offer.getDescription());
         java.util.Set<String> jobTokens = tokenize(jobText.toString());
-        if (jobTokens.isEmpty()) return 0.0;
+        if (jobTokens.isEmpty())
+            return 0.0;
 
         java.util.Set<String> applicantTokens = new java.util.HashSet<>();
         for (String phrase : applicantPhrases) {
             applicantTokens.addAll(tokenize(phrase));
         }
-        if (applicantTokens.isEmpty()) return 0.0;
+        if (applicantTokens.isEmpty())
+            return 0.0;
 
         int matches = 0;
-        for (String s : applicantTokens) if (jobTokens.contains(s)) matches++;
+        for (String s : applicantTokens)
+            if (jobTokens.contains(s))
+                matches++;
 
         double raw = (matches * 100.0) / applicantTokens.size();
         return Math.round(raw * 10.0) / 10.0;
@@ -780,7 +909,8 @@ public class ApplicationState {
     }
 
     // ======================================================
-    // Your seed logic (unchanged): uses addEmployer/addCompany/addApplicant/createJobOffer/addApplication
+    // Your seed logic (unchanged): uses
+    // addEmployer/addCompany/addApplicant/createJobOffer/addApplication
     // ======================================================
 
     private void populateApplicationState() {
@@ -975,7 +1105,8 @@ public class ApplicationState {
         addApplicant(chloe);
 
         // ========= JOB OFFERS =========
-        // Use your JobOfferStatus enum: adjust names if different (e.g. PUBLISHED/DRAFT/CLOSED)
+        // Use your JobOfferStatus enum: adjust names if different (e.g.
+        // PUBLISHED/DRAFT/CLOSED)
         JobOffer o1 = new JobOffer();
         o1.setTitle("Junior Java Developer");
         o1.setDescription("Work on backend services in Java for our web platform.");
@@ -1219,13 +1350,14 @@ public class ApplicationState {
         for (Applicant a : applicants.values()) {
             try {
                 recomputeMatchScoresForApplicant(a.getId());
-            } catch (Exception ignore) {}
+            } catch (Exception ignore) {
+            }
         }
     }
 
     // ======================================================
-// APPLICATIONS API (names used by your Resource)
-// ======================================================
+    // APPLICATIONS API (names used by your Resource)
+    // ======================================================
 
     public List<Application> listApplications() {
         return new ArrayList<>(applications.values());
@@ -1234,10 +1366,12 @@ public class ApplicationState {
     public Application findApplication(UUID id) {
         // prefer cache, fallback to DB
         Application a = applications.get(id);
-        if (a != null) return a;
+        if (a != null)
+            return a;
 
         Application db = em.find(Application.class, id);
-        if (db != null) applications.put(id, db);
+        if (db != null)
+            applications.put(id, db);
         return db;
     }
 
@@ -1261,7 +1395,8 @@ public class ApplicationState {
     @Transactional
     public Application updateApplication(UUID id, Application updated) {
         Application existing = em.find(Application.class, id);
-        if (existing == null) return null;
+        if (existing == null)
+            return null;
 
         // Keep identity stable
         updated.setId(id);
@@ -1289,7 +1424,8 @@ public class ApplicationState {
     @Transactional
     public int recomputeMatchScoresForApplicant(UUID applicantId) {
         Applicant applicant = em.find(Applicant.class, applicantId);
-        if (applicant == null) throw new NotFoundException("Applicant not found");
+        if (applicant == null)
+            throw new NotFoundException("Applicant not found");
 
         // refresh cache with the latest managed entity
         applicants.put(applicantId, applicant);
@@ -1299,7 +1435,8 @@ public class ApplicationState {
         int updated = 0;
         for (Application app : apps) {
             JobOffer offer = em.find(JobOffer.class, app.getJobOfferId());
-            if (offer == null) continue;
+            if (offer == null)
+                continue;
 
             // also keep offer fresh in cache
             jobOffers.put(offer.getId(), offer);
@@ -1314,8 +1451,8 @@ public class ApplicationState {
     }
 
     // ======================================================
-// APPLICANTS API (names used by your Resource)
-// ======================================================
+    // APPLICANTS API (names used by your Resource)
+    // ======================================================
 
     public List<Applicant> listApplicants() {
         return new ArrayList<>(applicants.values());
@@ -1323,14 +1460,16 @@ public class ApplicationState {
 
     public Applicant findApplicant(UUID id) {
         Applicant cached = applicants.get(id);
-        if (cached != null) return cached;
+        if (cached != null)
+            return cached;
 
         List<Applicant> list = em.createQuery(
-                "SELECT a FROM Applicant a LEFT JOIN FETCH a.skills WHERE a.id = :id", Applicant.class
-        ).setParameter("id", id).getResultList();
+                "SELECT a FROM Applicant a LEFT JOIN FETCH a.skills WHERE a.id = :id", Applicant.class)
+                .setParameter("id", id).getResultList();
 
         Applicant db = list.isEmpty() ? null : list.get(0);
-        if (db != null) applicants.put(id, db);
+        if (db != null)
+            applicants.put(id, db);
         return db;
     }
 
@@ -1342,7 +1481,8 @@ public class ApplicationState {
     @Transactional
     public Applicant updateApplicant(UUID id, Applicant updated) {
         Applicant managed = em.find(Applicant.class, id);
-        if (managed == null) return null;
+        if (managed == null)
+            return null;
 
         // Copy scalar fields
         managed.setFirstName(updated.getFirstName());
@@ -1372,20 +1512,28 @@ public class ApplicationState {
     @Transactional
     public Applicant updateApplicantProfile(UUID id, Applicant incoming) {
         Applicant managed = em.find(Applicant.class, id);
-        if (managed == null) throw new NotFoundException("Applicant not found");
+        if (managed == null)
+            throw new NotFoundException("Applicant not found");
 
-        managed.setFirstName(incoming.getFirstName());
-        managed.setLastName(incoming.getLastName());
-        managed.setEmail(incoming.getEmail());
+        if (incoming.getFirstName() != null && !incoming.getFirstName().isBlank())
+            managed.setFirstName(incoming.getFirstName());
+        if (incoming.getLastName() != null && !incoming.getLastName().isBlank())
+            managed.setLastName(incoming.getLastName());
+        if (incoming.getEmail() != null && !incoming.getEmail().isBlank())
+            managed.setEmail(incoming.getEmail());
 
-        managed.setPhotoUrl(incoming.getPhotoUrl());          // ✅ from User
-        managed.setContactInfo(incoming.getContactInfo());
-        managed.setDescriptionInfo(incoming.getDescriptionInfo());
-        managed.setCvInfo(incoming.getCvInfo());              // ✅ your field
+        if (incoming.getPhotoUrl() != null && !incoming.getPhotoUrl().isBlank())
+            managed.setPhotoUrl(incoming.getPhotoUrl());
+        if (incoming.getContactInfo() != null)
+            managed.setContactInfo(incoming.getContactInfo());
+        if (incoming.getDescriptionInfo() != null)
+            managed.setDescriptionInfo(incoming.getDescriptionInfo());
+        if (incoming.getCvInfo() != null)
+            managed.setCvInfo(incoming.getCvInfo());
 
-        // ✅ Robust ElementCollection update
-        managed.getSkills().clear();
+        // Robust ElementCollection update
         if (incoming.getSkills() != null) {
+            managed.getSkills().clear();
             managed.getSkills().addAll(incoming.getSkills());
         }
 
@@ -1393,10 +1541,9 @@ public class ApplicationState {
         return managed;
     }
 
-
     // ======================================================
-// COMPANIES API (names used by your Resource)
-// ======================================================
+    // COMPANIES API (names used by your Resource)
+    // ======================================================
 
     public List<Company> listCompanies() {
         return new ArrayList<>(companies.values());
@@ -1404,10 +1551,12 @@ public class ApplicationState {
 
     public Company findCompany(UUID id) {
         Company c = companies.get(id);
-        if (c != null) return c;
+        if (c != null)
+            return c;
 
         Company db = em.find(Company.class, id);
-        if (db != null) companies.put(id, db);
+        if (db != null)
+            companies.put(id, db);
         return db;
     }
 
@@ -1428,8 +1577,8 @@ public class ApplicationState {
     }
 
     // ======================================================
-// EMPLOYERS API (names used by your Resource)
-// ======================================================
+    // EMPLOYERS API (names used by your Resource)
+    // ======================================================
 
     public List<Employer> listEmployers() {
         return new ArrayList<>(employers.values());
@@ -1437,10 +1586,12 @@ public class ApplicationState {
 
     public Employer findEmployer(UUID id) {
         Employer e = employers.get(id);
-        if (e != null) return e;
+        if (e != null)
+            return e;
 
         Employer db = em.find(Employer.class, id);
-        if (db != null) employers.put(id, db);
+        if (db != null)
+            employers.put(id, db);
         return db;
     }
 
@@ -1465,6 +1616,5 @@ public class ApplicationState {
                 .filter(c -> ownerEmployerId.equals(c.getOwnerEmployerId()))
                 .collect(Collectors.toList());
     }
-
 
 }
