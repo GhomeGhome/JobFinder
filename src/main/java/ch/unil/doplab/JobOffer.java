@@ -68,6 +68,18 @@ public class JobOffer {
     @Column(name = "skill", length = 255)
     private List<String> requiredSkills = new ArrayList<>();
 
+    // --- JPA relations (read-only via existing FK columns) ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employer_id", insertable = false, updatable = false)
+    private Employer employer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", insertable = false, updatable = false)
+    private Company company;
+
+    @OneToMany(mappedBy = "jobOffer", cascade = CascadeType.ALL, orphanRemoval = false)
+    private List<Application> applications = new ArrayList<>();
+
     // Applications liées – on laisse ça côté logique, pas en DB
     @Transient
     private List<UUID> applicationIds = new ArrayList<>();
@@ -173,6 +185,17 @@ public class JobOffer {
 
     public void removeApplicationId(UUID id) {
         applicationIds.remove(id);
+    }
+
+    public Employer getEmployer() { return employer; }
+    public void setEmployer(Employer employer) { this.employer = employer; }
+
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
+
+    public List<Application> getApplications() { return applications; }
+    public void setApplications(List<Application> applications) {
+        this.applications = (applications != null) ? applications : new ArrayList<>();
     }
 
     // ======================================================

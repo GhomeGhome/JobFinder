@@ -2,21 +2,22 @@ package ch.unil.doplab.service.domain;
 
 import ch.unil.doplab.*;
 
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.annotation.PostConstruct;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * ApplicationState est le "stockage mémoire" central de JobFinder.
- * Il gère toutes les entités : Employers, Applicants, Companies,
- * JobOffers, Applications.
+ * Central in-memory state + DB persistence (StudyBuddy style):
+ * - DB = persistent store
+ * - Maps = runtime cache
+ * - All logic stays here (resources stay thin)
  */
 @ApplicationScoped
 public class ApplicationState {
@@ -30,46 +31,69 @@ public class ApplicationState {
     private Map<UUID, JobOffer> jobOffers;
     private Map<UUID, Application> applications;
 
+    // ======================================================
+    // INIT / LOAD
+    // ======================================================
+
     @PostConstruct
     public void init() {
-        employers  = new HashMap<>();
+        employers = new HashMap<>();
         applicants = new HashMap<>();
-        companies  = new HashMap<>();
-        jobOffers  = new HashMap<>();
+        companies = new HashMap<>();
+        jobOffers = new HashMap<>();
         applications = new HashMap<>();
 
-        // Load existing DB content into the maps (if any)
         loadFromDatabase();
     }
 
+    /**
+     * Loads all rows from DB into RAM caches and rebuilds inverse lists.
+     */
     private void loadFromDatabase() {
-        // 1) load base entities
+        clearObjects();
+
         for (Employer e : em.createQuery("SELECT e FROM Employer e", Employer.class).getResultList()) {
             employers.put(e.getId(), e);
         }
-
-        for (Applicant a : em.createQuery("SELECT a FROM Applicant a", Applicant.class).getResultList()) {
+        for (Applicant a : em.createQuery(
+                "SELECT DISTINCT a FROM Applicant a LEFT JOIN FETCH a.skills", Applicant.class
+        ).getResultList()) {
             applicants.put(a.getId(), a);
         }
-
         for (Company c : em.createQuery("SELECT c FROM Company c", Company.class).getResultList()) {
             companies.put(c.getId(), c);
         }
-
         for (JobOffer o : em.createQuery("SELECT o FROM JobOffer o", JobOffer.class).getResultList()) {
             jobOffers.put(o.getId(), o);
         }
-
         for (Application app : em.createQuery("SELECT a FROM Application a", Application.class).getResultList()) {
             applications.put(app.getId(), app);
         }
 
-        // 2) rebuild in-memory “inverse” relations, if you want:
-        //    - company.employerIds, company.jobOfferIds
-        //    - employer.jobOfferIds
-        //    - jobOffer.applicationIds
-        //    - applicant.applicationIds
+        rebuildInverseRelations(); // ✅ this was missing
+    }
 
+    /**
+     * Rebuilds "inverse" lists in RAM only (jobOfferIds, applicationIds, employerIds, etc.)
+     * This mirrors what StudyBuddy did.
+     */
+    private void rebuildInverseRelations() {
+
+        for (Employer e : employers.values()) {
+            if (e.getJobOfferIds() != null) e.getJobOfferIds().clear();
+        }
+        for (Company c : companies.values()) {
+            if (c.getEmployerIds() != null) c.getEmployerIds().clear();
+            if (c.getJobOfferIds() != null) c.getJobOfferIds().clear();
+        }
+        for (Applicant a : applicants.values()) {
+            if (a.getApplicationIds() != null) a.getApplicationIds().clear();
+        }
+        for (JobOffer o : jobOffers.values()) {
+            if (o.getApplicationIds() != null) o.getApplicationIds().clear();
+        }
+
+        // Link JobOffer -> Employer and Company
         for (JobOffer o : jobOffers.values()) {
             UUID empId = o.getEmployerId();
             if (empId != null) {
@@ -77,25 +101,23 @@ public class ApplicationState {
                 if (e != null) e.addJobOfferId(o.getId());
             }
 
-            UUID companyId = o.getCompanyId();
-            if (companyId != null) {
-                Company c = companies.get(companyId);
+            UUID compId = o.getCompanyId();
+            if (compId != null) {
+                Company c = companies.get(compId);
                 if (c != null) c.addJobOfferId(o.getId());
             }
         }
 
-        for (Application app : applications.values()) {
-            JobOffer offer = jobOffers.get(app.getJobOfferId());
-            if (offer != null) {
-                offer.addApplicationId(app.getId());
-            }
-            Applicant applicant = applicants.get(app.getApplicantId());
-            if (applicant != null) {
-                applicant.addApplicationId(app.getId());
-            }
+        // Link Application -> JobOffer and Applicant
+        for (Application a : applications.values()) {
+            JobOffer offer = jobOffers.get(a.getJobOfferId());
+            if (offer != null) offer.addApplicationId(a.getId());
+
+            Applicant ap = applicants.get(a.getApplicantId());
+            if (ap != null) ap.addApplicationId(a.getId());
         }
 
-        // (Optionally link company ↔ owner employer)
+        // Link Company <-> owner Employer
         for (Company c : companies.values()) {
             UUID ownerId = c.getOwnerEmployerId();
             if (ownerId != null) {
@@ -116,7 +138,575 @@ public class ApplicationState {
         applications.clear();
     }
 
-    // ... keep your existing getters like getAllEmployers(), getEmployer(id), etc.
+    // ======================================================
+    // GETTERS (RAM cache)
+    // ======================================================
+
+    public Map<UUID, Employer> getAllEmployers() { return employers; }
+    public Map<UUID, Applicant> getAllApplicants() { return applicants; }
+    public Map<UUID, Company> getAllCompanies() { return companies; }
+    public Map<UUID, JobOffer> getAllOffers() { return jobOffers; }
+    public Map<UUID, Application> getAllApplications() { return applications; }
+
+    public Employer getEmployer(UUID id) { return employers.get(id); }
+    public Applicant getApplicant(UUID id) { return applicants.get(id); }
+    public Company getCompany(UUID id) { return companies.get(id); }
+    public JobOffer getOffer(UUID id) { return jobOffers.get(id); }
+    public Application getApplication(UUID id) { return applications.get(id); }
+
+    // ======================================================
+    // EMPLOYERS (DB + cache)
+    // ======================================================
+
+    @Transactional
+    public Employer addEmployer(Employer e) {
+        if (e == null) throw new IllegalArgumentException("Employer cannot be null");
+
+        if (e.getId() == null) e.setId(UUID.randomUUID());
+        em.persist(e);
+
+        employers.put(e.getId(), e);
+
+        // link to company in RAM (optional)
+        if (e.getCompanyId() != null) {
+            Company c = companies.get(e.getCompanyId());
+            if (c != null) c.addEmployerId(e.getId());
+        }
+
+        return e;
+    }
+
+    @Transactional
+    public boolean setEmployer(UUID id, Employer updated) {
+        Employer existing = em.find(Employer.class, id);
+        if (existing == null) return false;
+
+        updated.setId(id);
+
+        // preserve relationship if client didn't send it
+        if (updated.getCompanyId() == null) updated.setCompanyId(existing.getCompanyId());
+
+        Employer merged = em.merge(updated);
+        employers.put(id, merged);
+        return true;
+    }
+
+    @Transactional
+    public boolean removeEmployer(UUID id) {
+        Employer existing = em.find(Employer.class, id);
+        if (existing == null) return false;
+
+        // Optional: what to do with job offers of this employer?
+        // For safety, we can delete them (and their applications) too.
+        List<UUID> offersToDelete = jobOffers.values().stream()
+                .filter(o -> id.equals(o.getEmployerId()))
+                .map(JobOffer::getId)
+                .toList();
+
+        for (UUID offerId : offersToDelete) {
+            deleteJobOffer(offerId); // deletes dependent applications too
+        }
+
+        Employer managed = em.merge(existing);
+        em.remove(managed);
+
+        // RAM cleanup
+        employers.remove(id);
+
+        // detach company link in RAM
+        UUID companyId = existing.getCompanyId();
+        if (companyId != null) {
+            Company c = companies.get(companyId);
+            if (c != null) {
+                c.removeEmployerId(id);
+                if (id.equals(c.getOwnerEmployerId())) c.setOwnerEmployerId(null);
+            }
+        }
+
+        return true;
+    }
+
+    // ======================================================
+    // APPLICANTS (DB + cache)
+    // ======================================================
+
+    @Transactional
+    public Applicant addApplicant(Applicant a) {
+        if (a == null) throw new IllegalArgumentException("Applicant cannot be null");
+
+        if (a.getId() == null) a.setId(UUID.randomUUID());
+        em.persist(a);
+
+        applicants.put(a.getId(), a);
+        return a;
+    }
+
+    @Transactional
+    public boolean setApplicant(UUID id, Applicant updated) {
+        Applicant existing = em.find(Applicant.class, id);
+        if (existing == null) return false;
+
+        updated.setId(id);
+
+        Applicant merged = em.merge(updated);
+        applicants.put(id, merged);
+        return true;
+    }
+
+    @Transactional
+    public boolean removeApplicant(UUID id) {
+        Applicant existing = em.find(Applicant.class, id);
+        if (existing == null) return false;
+
+        // Delete applications of this applicant (DB + RAM)
+        List<UUID> appIds = applications.values().stream()
+                .filter(app -> id.equals(app.getApplicantId()))
+                .map(Application::getId)
+                .toList();
+
+        for (UUID appId : appIds) {
+            removeApplication(appId);
+        }
+
+        Applicant managed = em.merge(existing);
+        em.remove(managed);
+
+        applicants.remove(id);
+        return true;
+    }
+
+    // ======================================================
+    // COMPANIES (DB + cache)
+    // ======================================================
+
+    @Transactional
+    public Company addCompany(Company c) {
+        if (c == null) throw new IllegalArgumentException("Company cannot be null");
+
+        if (c.getId() == null) c.setId(UUID.randomUUID());
+        em.persist(c);
+
+        companies.put(c.getId(), c);
+
+        // link owner employer in RAM (optional)
+        if (c.getOwnerEmployerId() != null) {
+            Employer owner = employers.get(c.getOwnerEmployerId());
+            if (owner != null) owner.setCompanyId(c.getId());
+            c.addEmployerId(c.getOwnerEmployerId());
+        }
+
+        return c;
+    }
+
+    @Transactional
+    public boolean setCompany(UUID id, Company updated) {
+        Company existing = em.find(Company.class, id);
+        if (existing == null) return false;
+
+        updated.setId(id);
+
+        // preserve owner if not sent
+        if (updated.getOwnerEmployerId() == null) updated.setOwnerEmployerId(existing.getOwnerEmployerId());
+
+        Company merged = em.merge(updated);
+        companies.put(id, merged);
+        return true;
+    }
+
+    @Transactional
+    public boolean removeCompany(UUID id) {
+        Company existing = em.find(Company.class, id);
+        if (existing == null) return false;
+
+        // Detach company from job offers (or delete offers – here we detach)
+        for (JobOffer o : jobOffers.values()) {
+            if (id.equals(o.getCompanyId())) {
+                o.setCompanyId(null);
+                JobOffer managedOffer = em.find(JobOffer.class, o.getId());
+                if (managedOffer != null) managedOffer.setCompanyId(null);
+            }
+        }
+
+        // Detach company from employers (RAM + DB)
+        for (Employer e : employers.values()) {
+            if (id.equals(e.getCompanyId())) {
+                e.setCompanyId(null);
+                Employer managedEmp = em.find(Employer.class, e.getId());
+                if (managedEmp != null) managedEmp.setCompanyId(null);
+            }
+        }
+
+        Company managed = em.merge(existing);
+        em.remove(managed);
+
+        companies.remove(id);
+        return true;
+    }
+
+    // ======================================================
+    // JOB OFFERS (DB + cache)  -- IMPORTANT FIXES HERE
+    // ======================================================
+
+    /**
+     * List from cache (StudyBuddy style). Sort by createdAt if available.
+     */
+    public List<JobOffer> listJobOffers(UUID employerId) {
+        List<JobOffer> list = new ArrayList<>(jobOffers.values());
+        if (employerId != null) {
+            list = list.stream()
+                    .filter(o -> employerId.equals(o.getEmployerId()))
+                    .toList();
+        }
+
+        // sort newest first if createdAt exists; otherwise stable
+        list = list.stream()
+                .sorted((a, b) -> {
+                    try {
+                        var ta = a.getCreatedAt();
+                        var tb = b.getCreatedAt();
+                        if (ta == null && tb == null) return 0;
+                        if (ta == null) return 1;
+                        if (tb == null) return -1;
+                        return tb.compareTo(ta);
+                    } catch (Exception ignore) {
+                        return 0;
+                    }
+                })
+                .toList();
+
+        return list;
+    }
+
+    public JobOffer findJobOffer(UUID id) {
+        // prefer cache; fall back to DB if needed
+        JobOffer o = jobOffers.get(id);
+        if (o != null) return o;
+
+        JobOffer db = em.find(JobOffer.class, id);
+        if (db != null) {
+            jobOffers.put(id, db);
+        }
+        return db;
+    }
+
+    @Transactional
+    public JobOffer createJobOffer(JobOffer offer) {
+        if (offer == null) throw new IllegalArgumentException("JobOffer cannot be null");
+        if (offer.getEmployerId() == null) throw new IllegalArgumentException("JobOffer must have employerId");
+
+        // ensure ID exists if your entity doesn't generate it
+        if (offer.getId() == null) offer.setId(UUID.randomUUID());
+
+        em.persist(offer);
+
+        // ✅ CRITICAL: update cache
+        jobOffers.put(offer.getId(), offer);
+
+        // link inverse in RAM
+        Employer e = employers.get(offer.getEmployerId());
+        if (e != null) e.addJobOfferId(offer.getId());
+
+        if (offer.getCompanyId() != null) {
+            Company c = companies.get(offer.getCompanyId());
+            if (c != null) c.addJobOfferId(offer.getId());
+        }
+
+        return offer;
+    }
+
+    @Transactional
+    public JobOffer updateJobOffer(UUID id, JobOffer updated) {
+        if (updated == null) throw new IllegalArgumentException("JobOffer cannot be null");
+
+        JobOffer existing = em.find(JobOffer.class, id);
+        if (existing == null) return null;
+
+        // apply allowed fields
+        existing.setTitle(updated.getTitle());
+        existing.setDescription(updated.getDescription());
+        existing.setEmploymentType(updated.getEmploymentType());
+        existing.setStartDate(updated.getStartDate());
+        existing.setEndDate(updated.getEndDate());
+        existing.setCompanyId(updated.getCompanyId());
+
+        if (updated.getStatus() != null) existing.setStatus(updated.getStatus());
+
+        existing.setRequiredSkills(updated.getRequiredSkills());
+        existing.setRequiredQualifications(updated.getRequiredQualifications());
+
+        // cache refresh
+        jobOffers.put(id, existing);
+        return existing;
+    }
+
+    @Transactional
+    public boolean deleteJobOffer(UUID id) {
+        JobOffer existing = em.find(JobOffer.class, id);
+        if (existing == null) return false;
+
+        // delete dependent applications (DB + RAM)
+        List<UUID> dependentApps = applications.values().stream()
+                .filter(a -> id.equals(a.getJobOfferId()))
+                .map(Application::getId)
+                .toList();
+
+        for (UUID appId : dependentApps) {
+            removeApplication(appId);
+        }
+
+        JobOffer managed = em.merge(existing);
+        em.remove(managed);
+
+        // RAM cleanup
+        jobOffers.remove(id);
+
+        Employer e = employers.get(existing.getEmployerId());
+        if (e != null) e.removeJobOfferId(id);
+
+        if (existing.getCompanyId() != null) {
+            Company c = companies.get(existing.getCompanyId());
+            if (c != null) c.removeJobOfferId(id);
+        }
+
+        return true;
+    }
+
+    @Transactional
+    public JobOffer publishJobOffer(UUID offerId, UUID employerId) {
+        JobOffer o = em.find(JobOffer.class, offerId);
+        if (o == null) throw new NoSuchElementException();
+        if (!Objects.equals(o.getEmployerId(), employerId)) {
+            throw new SecurityException("Employer cannot publish another employer's offer.");
+        }
+        o.setStatus(JobOfferStatus.Published);
+        jobOffers.put(o.getId(), o);
+        return o;
+    }
+
+    @Transactional
+    public JobOffer closeJobOffer(UUID offerId, UUID employerId) {
+        JobOffer o = em.find(JobOffer.class, offerId);
+        if (o == null) throw new NoSuchElementException();
+        if (!Objects.equals(o.getEmployerId(), employerId)) throw new SecurityException();
+        o.setStatus(JobOfferStatus.Closed);
+        jobOffers.put(o.getId(), o);
+        return o;
+    }
+
+    @Transactional
+    public JobOffer reopenJobOffer(UUID offerId, UUID employerId) {
+        JobOffer o = em.find(JobOffer.class, offerId);
+        if (o == null) throw new NoSuchElementException();
+        if (!Objects.equals(o.getEmployerId(), employerId)) throw new SecurityException();
+        o.setStatus(JobOfferStatus.Reopened);
+        jobOffers.put(o.getId(), o);
+        return o;
+    }
+
+    // ======================================================
+    // APPLICATIONS (DB + cache)  -- IMPORTANT FIXES HERE
+    // ======================================================
+
+    @Transactional
+    public Application addApplication(Application a) {
+        if (a == null) throw new IllegalArgumentException("Application cannot be null");
+        if (a.getJobOfferId() == null || a.getApplicantId() == null) {
+            throw new IllegalArgumentException("jobOfferId and applicantId are required");
+        }
+
+        // ✅ Validate against DB (so it works even if caches were missing something)
+        JobOffer offer = em.find(JobOffer.class, a.getJobOfferId());
+        if (offer == null) throw new IllegalArgumentException("Unknown JobOffer: " + a.getJobOfferId());
+
+        Applicant applicant = em.find(Applicant.class, a.getApplicantId());
+        if (applicant == null) throw new IllegalArgumentException("Unknown Applicant: " + a.getApplicantId());
+
+        // ensure ID if not generated by entity
+        if (a.getId() == null) a.setId(UUID.randomUUID());
+
+        // compute match score if not provided
+        if (a.getMatchScore() == null) {
+            // use cache applicant/offer if present, else DB ones
+            Applicant apForScore = applicants.getOrDefault(applicant.getId(), applicant);
+            JobOffer ofForScore = jobOffers.getOrDefault(offer.getId(), offer);
+            a.setMatchScore(computeMatchScore(apForScore, ofForScore));
+        }
+
+        em.persist(a);
+
+        // ✅ update caches
+        applications.put(a.getId(), a);
+
+        // also keep offer/applicant cached (helpful for UI)
+        jobOffers.putIfAbsent(offer.getId(), offer);
+        applicants.putIfAbsent(applicant.getId(), applicant);
+
+        JobOffer cachedOffer = jobOffers.get(offer.getId());
+        Applicant cachedApplicant = applicants.get(applicant.getId());
+
+        if (cachedOffer != null) cachedOffer.addApplicationId(a.getId());
+        if (cachedApplicant != null) cachedApplicant.addApplicationId(a.getId());
+
+        return a;
+    }
+
+    @Transactional
+    public Application updateApplicationMatchScore(UUID id, double score) {
+        Application managed = em.find(Application.class, id);
+        if (managed == null) throw new NotFoundException("Application not found: " + id);
+
+        managed.setMatchScore(score);
+
+        // cache refresh
+        applications.put(id, managed);
+        return managed;
+    }
+
+    @Transactional
+    public Application updateApplicationStatus(UUID id, ApplicationStatus status) {
+        Application managed = em.find(Application.class, id);
+        if (managed == null) throw new NotFoundException("Application not found: " + id);
+
+        managed.setStatus(status);
+        managed.setUpdatedAt(LocalDateTime.now());
+
+        applications.put(id, managed);
+        return managed;
+    }
+
+    @Transactional
+    public boolean removeApplication(UUID id) {
+        Application managed = em.find(Application.class, id);
+        if (managed == null) return false;
+
+        // update inverse RAM relations first
+        JobOffer o = jobOffers.get(managed.getJobOfferId());
+        if (o != null) o.removeApplicationId(id);
+
+        Applicant ap = applicants.get(managed.getApplicantId());
+        if (ap != null) ap.removeApplicationId(id);
+
+        Application toRemove = em.merge(managed);
+        em.remove(toRemove);
+
+        applications.remove(id);
+        return true;
+    }
+
+    // ======================================================
+    // Helpers for JSF / UI
+    // ======================================================
+
+    public List<Application> getApplicationsByApplicantId(UUID applicantId) {
+        return applications.values().stream()
+                .filter(app -> applicantId.equals(app.getApplicantId()))
+                .collect(Collectors.toList());
+    }
+
+    public List<Application> getApplicationsByJobId(UUID jobId) {
+        return applications.values().stream()
+                .filter(app -> jobId.equals(app.getJobOfferId()))
+                .collect(Collectors.toList());
+    }
+
+    public List<Application> getApplicationsByEmployerId(UUID employerId) {
+        List<UUID> employerJobIds = jobOffers.values().stream()
+                .filter(job -> employerId.equals(job.getEmployerId()))
+                .map(JobOffer::getId)
+                .toList();
+
+        return applications.values().stream()
+                .filter(app -> employerJobIds.contains(app.getJobOfferId()))
+                .collect(Collectors.toList());
+    }
+
+    public String getJobTitleById(UUID jobId) {
+        JobOffer offer = jobOffers.get(jobId);
+        return (offer != null && offer.getTitle() != null) ? offer.getTitle() : "Unknown Job";
+    }
+
+    public String getApplicantNameById(UUID applicantId) {
+        Applicant a = applicants.get(applicantId);
+        if (a == null) return "Unknown";
+        String fn = a.getFirstName() == null ? "" : a.getFirstName();
+        String ln = a.getLastName() == null ? "" : a.getLastName();
+        String name = (fn + " " + ln).trim();
+        return name.isBlank() ? "Unknown" : name;
+    }
+
+    public String getCompanyNameByJobId(UUID jobId) {
+        JobOffer offer = jobOffers.get(jobId);
+        if (offer == null) return "Unknown";
+        Company c = companies.get(offer.getCompanyId());
+        return (c != null && c.getName() != null) ? c.getName() : "Unknown";
+    }
+
+    // ======================================================
+    // Matching helpers
+    // ======================================================
+
+    private static Set<String> tokenize(String text) {
+        if (text == null) return Collections.emptySet();
+
+        String[] raw = text.toLowerCase().split("[^a-z0-9+]+");
+        Set<String> tokens = new HashSet<>();
+        for (String t : raw) {
+            t = t.trim();
+            if (t.length() >= 2) tokens.add(t);
+        }
+        return tokens;
+    }
+
+    private double computeMatchScore(Applicant applicant, JobOffer offer) {
+        String skillsStr = applicant.getSkillsAsString();
+        Set<String> skillTokens = tokenize(skillsStr);
+        if (skillTokens.isEmpty()) return 0.0;
+
+        StringBuilder jobText = new StringBuilder();
+        if (offer.getTitle() != null) jobText.append(offer.getTitle()).append(" ");
+        if (offer.getDescription() != null) jobText.append(offer.getDescription());
+        Set<String> jobTokens = tokenize(jobText.toString());
+        if (jobTokens.isEmpty()) return 0.0;
+
+        int matches = 0;
+        for (String s : skillTokens) if (jobTokens.contains(s)) matches++;
+
+        double raw = (matches * 100.0) / skillTokens.size();
+        return Math.round(raw * 10.0) / 10.0;
+    }
+
+    // ======================================================
+    // DB admin endpoints (populate/clear/reset) - StudyBuddy style
+    // ======================================================
+
+    @Transactional
+    public void clearDB() {
+        clearObjects();
+
+        // children -> parents
+        em.createQuery("DELETE FROM Application").executeUpdate();
+        em.createQuery("DELETE FROM JobOffer").executeUpdate();
+        em.createQuery("DELETE FROM Company").executeUpdate();
+        em.createQuery("DELETE FROM Applicant").executeUpdate();
+        em.createQuery("DELETE FROM Employer").executeUpdate();
+    }
+
+    @Transactional
+    public void populateDB() {
+        clearDB();
+        populateApplicationState();
+        // After populate, reload caches from DB to ensure everything is consistent
+        loadFromDatabase();
+    }
+
+    @Transactional
+    public void resetDB() {
+        populateDB();
+    }
+
+    // ======================================================
+    // Your seed logic (unchanged): uses addEmployer/addCompany/addApplicant/createJobOffer/addApplication
+    // ======================================================
 
     private void populateApplicationState() {
         clearObjects();
@@ -307,7 +897,7 @@ public class ApplicationState {
         o1.setEmployerId(alice.getId());
         o1.setCompanyId(acme.getId());
         o1.setStatus(JobOfferStatus.Published);
-        addOffer(o1);
+        createJobOffer(o1);
 
         JobOffer o2 = new JobOffer();
         o2.setTitle("Data Analyst Intern");
@@ -315,7 +905,7 @@ public class ApplicationState {
         o2.setEmployerId(bob.getId());
         o2.setCompanyId(dataWorks.getId());
         o2.setStatus(JobOfferStatus.Published);
-        addOffer(o2);
+        createJobOffer(o2);
 
         JobOffer o3 = new JobOffer();
         o3.setTitle("DevOps Engineer");
@@ -323,7 +913,7 @@ public class ApplicationState {
         o3.setEmployerId(carla.getId());
         o3.setCompanyId(greenFuture.getId());
         o3.setStatus(JobOfferStatus.Draft);
-        addOffer(o3);
+        createJobOffer(o3);
 
         JobOffer o4 = new JobOffer();
         o4.setTitle("Frontend Developer");
@@ -331,7 +921,7 @@ public class ApplicationState {
         o4.setEmployerId(alice.getId());
         o4.setCompanyId(acme.getId());
         o4.setStatus(JobOfferStatus.Published);
-        addOffer(o4);
+        createJobOffer(o4);
 
         JobOffer o5 = new JobOffer();
         o5.setTitle("Machine Learning Engineer");
@@ -339,7 +929,7 @@ public class ApplicationState {
         o5.setEmployerId(bob.getId());
         o5.setCompanyId(dataWorks.getId());
         o5.setStatus(JobOfferStatus.Closed);
-        addOffer(o5);
+        createJobOffer(o5);
 
         JobOffer o6 = new JobOffer();
         o6.setTitle("Sustainability Consultant");
@@ -347,7 +937,7 @@ public class ApplicationState {
         o6.setEmployerId(carla.getId());
         o6.setCompanyId(greenFuture.getId());
         o6.setStatus(JobOfferStatus.Published);
-        addOffer(o6);
+        createJobOffer(o6);
 
         JobOffer o7 = new JobOffer();
         o7.setTitle("Product Manager – Fintech");
@@ -355,7 +945,7 @@ public class ApplicationState {
         o7.setEmployerId(bob.getId());
         o7.setCompanyId(finEdge.getId());
         o7.setStatus(JobOfferStatus.Published);
-        addOffer(o7);
+        createJobOffer(o7);
 
         JobOffer o8 = new JobOffer();
         o8.setTitle("Mobile Developer (iOS/Android)");
@@ -363,7 +953,7 @@ public class ApplicationState {
         o8.setEmployerId(david.getId());
         o8.setCompanyId(healthSync.getId());
         o8.setStatus(JobOfferStatus.Draft);
-        addOffer(o8);
+        createJobOffer(o8);
 
         JobOffer o9 = new JobOffer();
         o9.setTitle("Robotics Engineer Intern");
@@ -371,7 +961,7 @@ public class ApplicationState {
         o9.setEmployerId(alice.getId());
         o9.setCompanyId(roboLabs.getId());
         o9.setStatus(JobOfferStatus.Published);
-        addOffer(o9);
+        createJobOffer(o9);
 
         JobOffer o10 = new JobOffer();
         o10.setTitle("Cloud Architect");
@@ -379,7 +969,7 @@ public class ApplicationState {
         o10.setEmployerId(david.getId());
         o10.setCompanyId(cloudNova.getId());
         o10.setStatus(JobOfferStatus.Published);
-        addOffer(o10);
+        createJobOffer(o10);
 
         JobOffer o11 = new JobOffer();
         o11.setTitle("UX/UI Designer");
@@ -387,7 +977,7 @@ public class ApplicationState {
         o11.setEmployerId(alice.getId());
         o11.setCompanyId(eduTech.getId());
         o11.setStatus(JobOfferStatus.Draft);
-        addOffer(o11);
+        createJobOffer(o11);
 
         JobOffer o12 = new JobOffer();
         o12.setTitle("Operations Manager");
@@ -395,7 +985,7 @@ public class ApplicationState {
         o12.setEmployerId(bob.getId());
         o12.setCompanyId(alpineLogistics.getId());
         o12.setStatus(JobOfferStatus.Published);
-        addOffer(o12);
+        createJobOffer(o12);
 
         // ========= APPLICATIONS =========
         // Adjust enum names if needed (SUBMITTED, IN_REVIEW, REJECTED, HIRED, ...)
@@ -529,579 +1119,245 @@ public class ApplicationState {
         addApplication(a14App);
     }
 
-
-
-
     // ======================================================
-    // GETTERS
-    // ======================================================
+// APPLICATIONS API (names used by your Resource)
+// ======================================================
 
-    public Map<UUID, Employer> getAllEmployers() { return employers; }
-    public Map<UUID, Applicant> getAllApplicants() { return applicants; }
-    public Map<UUID, Company> getAllCompanies() { return companies; }
-    public Map<UUID, JobOffer> getAllOffers() { return jobOffers; }
-    public Map<UUID, Application> getAllApplications() { return applications; }
-
-    public Employer getEmployer(UUID id) { return employers.get(id); }
-    public Applicant getApplicant(UUID id) { return applicants.get(id); }
-    public Company getCompany(UUID id) { return companies.get(id); }
-    public JobOffer getOffer(UUID id) { return jobOffers.get(id); }
-    public Application getApplication(UUID id) { return applications.get(id); }
-
-
-    // ======================================================
-    // EMPLOYERS
-    // ======================================================
-
-    @Transactional
-    public Employer addEmployer(Employer e) {
-        if (e == null) throw new IllegalArgumentException("Employer cannot be null.");
-
-        UUID id = e.getId() != null ? e.getId() : UUID.randomUUID();
-        e.setId(id);
-
-        employers.put(id, e);
-
-        // Lier à sa Company si c'est spécifié
-        if (e.getCompanyId() != null) {
-            Company c = companies.get(e.getCompanyId());
-            if (c != null) c.addEmployerId(id);
-        }
-
-        em.persist(e);
-
-        return e;
+    public List<Application> listApplications() {
+        return new ArrayList<>(applications.values());
     }
 
-    @Transactional
-    public boolean setEmployer(UUID id, Employer updated) {
-        Employer existing = em.find(Employer.class, id);
-        if (existing == null) {
-            return false;
-        }
-
-        updated.setId(id);
-
-        // preserve relationship if not sent by client
-        if (updated.getCompanyId() == null) {
-            updated.setCompanyId(existing.getCompanyId());
-        }
-
-        // write to DB
-        Employer merged = em.merge(updated);
-
-        // update RAM cache
-        employers.put(id, merged);
-
-        return true;
-    }
-
-
-    public boolean removeEmployer(UUID id) {
-        Employer emp = employers.remove(id);
-        if (emp == null) {
-            return false;
-        }
-
-        // Detach from company if any
-        UUID companyId = emp.getCompanyId();
-        if (companyId != null) {
-            Company c = companies.get(companyId);
-            if (c != null) {
-                c.removeEmployerId(id);
-                if (id.equals(c.getOwnerEmployerId())) {
-                    c.setOwnerEmployerId(null);
-                }
-            }
-        }
-
-        // (Optionally handle jobOffers created by this employer – you can leave as-is for now)
-
-        return true;
-    }
-
-
-    // ======================================================
-    // APPLICANTS
-    // ======================================================
-
-    @Transactional
-    public Applicant addApplicant(Applicant a) {
-        if (a == null) throw new IllegalArgumentException("Applicant cannot be null.");
-
-        UUID id = a.getId() != null ? a.getId() : UUID.randomUUID();
-        a.setId(id);
-
-        applicants.put(id, a);
-        em.persist(a);
-        return a;
-    }
-
-    @Transactional
-    public boolean setApplicant(UUID id, Applicant updated) {
-        // 1) Check existence in DB
-        Applicant existing = em.find(Applicant.class, id);
-        if (existing == null) {
-            return false;
-        }
-
-        // 2) Enforce ID
-        updated.setId(id);
-
-        // 3) Merge into DB
-        Applicant merged = em.merge(updated);
-
-        // 4) Update in-memory cache
-        applicants.put(id, merged);
-
-        return true;
-    }
-
-    @Transactional
-    public boolean removeApplicant(UUID id) {
-        Applicant ap = applicants.remove(id);
-        if (ap == null) {
-            return false;
-        }
-
-        // Remove all applications of this applicant (from RAM only – OK for demo)
-        for (UUID appId : new ArrayList<>(ap.getApplicationIds())) {
-            removeApplication(appId);
-        }
-
-        // Remove from DB
-        Applicant managed = em.find(Applicant.class, id);
-        if (managed != null) {
-            em.remove(managed);
-        }
-
-        return true;
-    }
-
-    // ======================================================
-    // COMPANIES
-    // ======================================================
-
-    @Transactional
-    public Company addCompany(Company c) {
-        if (c == null) throw new IllegalArgumentException("Company cannot be null.");
-
-        UUID id = c.getId() != null ? c.getId() : UUID.randomUUID();
-        c.setId(id);
-
-        companies.put(id, c);
-
-        // Ajouter l'owner employer dans la liste
-        if (c.getOwnerEmployerId() != null) {
-            Employer owner = employers.get(c.getOwnerEmployerId());
-            if (owner != null) owner.setCompanyId(id);
-            c.addEmployerId(c.getOwnerEmployerId());
-        }
-
-        em.persist(c);
-
-        return c;
-    }
-
-    @Transactional
-    public boolean setCompany(UUID id, Company updated) {
-        Company existing = em.find(Company.class, id);
-        if (existing == null) {
-            return false;
-        }
-
-        updated.setId(id);
-
-        if (updated.getOwnerEmployerId() == null) {
-            updated.setOwnerEmployerId(existing.getOwnerEmployerId());
-        }
-
-        // write to DB
-        Company merged = em.merge(updated);
-
-        // update RAM cache
-        companies.put(id, merged);
-
-        return true;
-    }
-
-    public boolean removeCompany(UUID id) {
-        Company c = companies.remove(id);
-        if (c == null) {
-            return false;
-        }
-
-        // Detach from employers
-        for (UUID empId : new ArrayList<>(c.getEmployerIds())) {
-            Employer e = employers.get(empId);
-            if (e != null && id.equals(e.getCompanyId())) {
-                e.setCompanyId(null);
-            }
-            c.removeEmployerId(empId);
-        }
-
-        // Detach from job offers
-        for (UUID offerId : new ArrayList<>(c.getJobOfferIds())) {
-            JobOffer o = jobOffers.get(offerId);
-            if (o != null) {
-                o.setCompanyId(null);
-            }
-            c.removeJobOfferId(offerId);
-        }
-
-        return true;
-    }
-
-    // ======================================================
-    // JOB OFFERS
-    // ======================================================
-
-    @Transactional
-    public JobOffer addOffer(JobOffer o) {
-        if (o == null) throw new IllegalArgumentException("JobOffer cannot be null.");
-        if (o.getEmployerId() == null) throw new IllegalArgumentException("JobOffer must have employerId");
-
-        UUID id = o.getId() != null ? o.getId() : UUID.randomUUID();
-        o.setId(id);
-
-        // Valeurs par défaut
-        if (o.getStatus() == null) o.setStatus(JobOfferStatus.Draft);
-        if (o.getCreatedAt() == null) o.setCreatedAt(LocalDateTime.now());
-
-        // 1) update RAM
-        jobOffers.put(id, o);
-
-        Employer emp = employers.get(o.getEmployerId());
-        if (emp != null) emp.addJobOfferId(id);
-
-        if (o.getCompanyId() != null) {
-            Company c = companies.get(o.getCompanyId());
-            if (c != null) c.addJobOfferId(id);
-        }
-
-        // 2) persist to DB
-        em.persist(o);
-
-        return o;
-    }
-
-    public boolean setOffer(UUID id, JobOffer updated) {
-        JobOffer existing = jobOffers.get(id);
-        if (existing == null) return false;
-
-        updated.setId(id);
-        jobOffers.put(id, updated);
-        return true;
-    }
-
-    @Transactional
-    public boolean removeOffer(UUID id) {
-        JobOffer o = jobOffers.remove(id);
-        if (o == null) return false;
-
-        // Retirer des employeurs
-        Employer emp = employers.get(o.getEmployerId());
-        if (emp != null) emp.removeJobOfferId(id);
-
-        // Retirer des companies
-        Company c = companies.get(o.getCompanyId());
-        if (c != null) c.removeJobOfferId(id);
-
-        // Supprimer toutes les Applications associées
-        for (UUID appId : new ArrayList<>(o.getApplicationIds())) {
-            removeApplication(appId);
-        }
-
-        JobOffer managed = em.find(JobOffer.class, id);
-        if(managed != null){
-            em.remove(managed);
-        }
-
-        return true;
-    }
-
-    // === PUBLISH ===
-    public JobOffer publishOffer(UUID offerId, UUID employerId) {
-        JobOffer o = jobOffers.get(offerId);
-        if (o == null) throw new NoSuchElementException();
-
-        if (!employerId.equals(o.getEmployerId()))
-            throw new SecurityException("Employer cannot publish another employer's offer.");
-
-        o.setStatus(JobOfferStatus.Published);
-        return o;
-    }
-
-    // === CLOSE ===
-    public JobOffer closeOffer(UUID offerId, UUID employerId) {
-        JobOffer o = jobOffers.get(offerId);
-        if (o == null) throw new NoSuchElementException();
-
-        if (!employerId.equals(o.getEmployerId()))
-            throw new SecurityException("Employer cannot close another employer's offer.");
-
-        o.setStatus(JobOfferStatus.Closed);
-        return o;
-    }
-
-    // === REOPEN ===
-    public JobOffer reopenOffer(UUID offerId, UUID employerId) {
-        JobOffer o = jobOffers.get(offerId);
-        if (o == null) throw new NoSuchElementException();
-
-        if (!employerId.equals(o.getEmployerId()))
-            throw new SecurityException("Employer cannot reopen another employer's offer.");
-
-        o.setStatus(JobOfferStatus.Reopened);
-        return o;
-    }
-
-
-    // ======================================================
-    // APPLICATIONS
-    // ======================================================
-
-    @Transactional
-    public Application addApplication(Application a) {
-        // basic sanity
-        if (a.getJobOfferId() == null || a.getApplicantId() == null) {
-            throw new IllegalArgumentException("jobOfferId and applicantId are required");
-        }
-
-        JobOffer offer = jobOffers.get(a.getJobOfferId());
-        Applicant applicant = applicants.get(a.getApplicantId());
-
-        if (offer == null) {
-            throw new IllegalArgumentException("Unknown JobOffer: " + a.getJobOfferId());
-        }
-        if (applicant == null) {
-            throw new IllegalArgumentException("Unknown Applicant: " + a.getApplicantId());
-        }
-
-        // ID + dates are taken care of by @PrePersist in Application,
-        // but we still make sure there is an ID for the in-memory map:
-        if (a.getId() == null) {
-            a.setId(UUID.randomUUID());
-        }
-
-        // Only compute match score if not pre-set (seed data keeps its hard-coded scores)
-        if (a.getMatchScore() == null) {
-            double score = computeMatchScore(applicant, offer);
-            a.setMatchScore(score);
-        }
-
-        // Maintain in-memory maps
-        applications.put(a.getId(), a);
-        offer.addApplicationId(a.getId());
-        applicant.addApplicationId(a.getId());
-
-        // Persist in DB
-        em.persist(a);
-
-        return a;
-    }
-
-    @Transactional
-    public Application updateApplicationMatchScore(UUID id, double score) {
-        Application a = em.find(Application.class, id);
-        if (a == null) throw new NotFoundException("Application not found: " + id);
-
-        a.setMatchScore(score);
-        // updatedAt will be set by @PreUpdate
-        return a;
-    }
-
-
-    public boolean removeApplication(UUID id) {
-        Application a = applications.remove(id);
-        if (a == null) return false;
-
-        // Retirer du JobOffer
-        JobOffer o = jobOffers.get(a.getJobOfferId());
-        if (o != null) o.removeApplicationId(id);
-
-        // Retirer de l'Applicant
-        Applicant ap = applicants.get(a.getApplicantId());
-        if (ap != null) ap.removeApplicationId(id);
-
-        return true;
-    }
-
-    @Transactional
-    public Application updateApplicationStatus(UUID id, ApplicationStatus status) {
+    public Application findApplication(UUID id) {
+        // prefer cache, fallback to DB
         Application a = applications.get(id);
-        if (a == null) throw new NoSuchElementException();
+        if (a != null) return a;
 
-        a.setStatus(status);
-        a.setUpdatedAt(LocalDateTime.now());
-
-        // sync DB
-        Application managed = em.find(Application.class, id);
-        if (managed != null) {
-            managed.setStatus(status);
-            managed.setUpdatedAt(a.getUpdatedAt());
-        }
-
-        return a;
+        Application db = em.find(Application.class, id);
+        if (db != null) applications.put(id, db);
+        return db;
     }
 
-    // ======================================================
-    // INTERVIEWS
-    // ======================================================
-
-//    public Map<UUID, Interview> getAllInterviews() {
-//        return interviews;
-//    }
-//
-//    public void addInterview(Interview interview) {
-//        interviews.put(interview.getId(), interview);
-//    }
-//
-//    public List<Interview> getInterviewsForEmployer(UUID employerId) {
-//        return interviews.values().stream()
-//                .filter(i -> employerId.equals(i.getEmployerId()))
-//                .collect(Collectors.toList());
-//    }
-    // ======================================================
-    // NEW METHODS FOR JSF BEANS
-    // ======================================================
-
-    /**
-     * For Igor's "My Applications" page.
-     */
-    public List<Application> getApplicationsByApplicantId(UUID applicantId) {
+    public List<Application> listApplicationsByOfferId(UUID jobOfferId) {
         return applications.values().stream()
-                .filter(app -> app.getApplicantId().equals(applicantId))
+                .filter(a -> jobOfferId.equals(a.getJobOfferId()))
                 .collect(Collectors.toList());
     }
 
-    /**
-     * For Employer's "View Applicants" button on a specific job.
-     */
-    public List<Application> getApplicationsByJobId(UUID jobId) {
+    public List<Application> listApplicationsByApplicantId(UUID applicantId) {
         return applications.values().stream()
-                .filter(app -> app.getJobOfferId().equals(jobId))
+                .filter(a -> applicantId.equals(a.getApplicantId()))
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * For Employer's "All Applications" page.
-     */
-    public List<Application> getApplicationsByEmployerId(UUID employerId) {
-        // 1. Find all job IDs owned by this employer
-        List<UUID> employerJobIds = jobOffers.values().stream()
-                .filter(job -> job.getEmployerId().equals(employerId))
-                .map(JobOffer::getId)
-                .collect(Collectors.toList());
-
-        // 2. Return applications that match any of those Job IDs
-        return applications.values().stream()
-                .filter(app -> employerJobIds.contains(app.getJobOfferId()))
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Helper to get a Job Title by ID.
-     */
-    public String getJobTitleById(UUID jobId) {
-        JobOffer offer = jobOffers.get(jobId);
-        return (offer != null) ? offer.getTitle() : "Unknown Job";
-    }
-
-    /**
-     * Helper to get an Applicant Name by ID.
-     */
-    public String getApplicantNameById(UUID applicantId) {
-        Applicant applicant = applicants.get(applicantId);
-        return (applicant != null) ? applicant.getFirstName() + " " + applicant.getLastName() : "Unknown";
-    }
-
-    /**
-     * Helper to get Company Name by Job ID
-     */
-    public String getCompanyNameByJobId(UUID jobId) {
-        JobOffer offer = jobOffers.get(jobId);
-        if (offer == null) return "Unknown";
-        Company c = companies.get(offer.getCompanyId());
-        return (c != null) ? c.getName() : "Unknown";
-    }
-
-    // -----------------------------
-// Matching helpers
-// -----------------------------
-    private static Set<String> tokenize(String text) {
-        if (text == null) return Collections.emptySet();
-
-        String[] raw = text
-                .toLowerCase()
-                .split("[^a-z0-9+]+");  // split on non-alphanum (+ keeps C++/C# kind of stuff)
-
-        Set<String> tokens = new HashSet<>();
-        for (String t : raw) {
-            t = t.trim();
-            if (t.length() >= 2) {
-                tokens.add(t);
-            }
-        }
-        return tokens;
-    }
-
-    private double computeMatchScore(Applicant applicant, JobOffer offer) {
-        // 1) Applicant skills (from profile)
-        String skillsStr = applicant.getSkillsAsString();
-        Set<String> skillTokens = tokenize(skillsStr);
-
-        if (skillTokens.isEmpty()) {
-            return 0.0; // no skills = 0%
-        }
-
-        // 2) Job keywords (title + description for now)
-        StringBuilder jobText = new StringBuilder();
-        if (offer.getTitle() != null) jobText.append(offer.getTitle()).append(" ");
-        if (offer.getDescription() != null) jobText.append(offer.getDescription());
-
-        Set<String> jobTokens = tokenize(jobText.toString());
-
-        if (jobTokens.isEmpty()) {
-            return 0.0;
-        }
-
-        // 3) Overlap between applicant skills and job tokens
-        int matches = 0;
-        for (String s : skillTokens) {
-            if (jobTokens.contains(s)) {
-                matches++;
-            }
-        }
-
-        double raw = (matches * 100.0) / skillTokens.size();
-        // one decimal, e.g. 83.3
-        return Math.round(raw * 10.0) / 10.0;
     }
 
     @Transactional
-public void clearDB() {
-    // clear RAM first
-    clearObjects();
-
-    // delete children first, then parents
-    em.createQuery("DELETE FROM Application").executeUpdate();
-    em.createQuery("DELETE FROM JobOffer").executeUpdate();
-    em.createQuery("DELETE FROM Applicant").executeUpdate();
-    em.createQuery("DELETE FROM Employer").executeUpdate();
-    em.createQuery("DELETE FROM Company").executeUpdate();
-}
-
-    @Transactional
-    public void populateDB() {
-        // full reset, like StudyBuddy
-        clearDB();                  // clears RAM + DB tables
-        populateApplicationState(); // uses addEmployer/addCompany/addApplicant/addOffer/addApplication
+    public Application createApplication(Application a) {
+        return addApplication(a); // your existing DB+cache method
     }
 
     @Transactional
-    public void resetDB() {
-        // just delegate to populateDB for clarity
-        populateDB();
+    public Application updateApplication(UUID id, Application updated) {
+        Application existing = em.find(Application.class, id);
+        if (existing == null) return null;
+
+        // Keep identity stable
+        updated.setId(id);
+
+        // Usually jobOfferId/applicantId should NOT change for an application:
+        // keep original IDs even if client sends something else
+        updated.setJobOfferId(existing.getJobOfferId());
+        updated.setApplicantId(existing.getApplicantId());
+
+        // Copy fields you allow to change (safe defaults)
+        existing.setStatus(updated.getStatus());
+        existing.setMatchScore(updated.getMatchScore());
+        existing.setSubmittedAt(updated.getSubmittedAt()); // if you allow it
+        existing.setUpdatedAt(LocalDateTime.now());
+
+        applications.put(id, existing);
+        return existing;
     }
+
+    @Transactional
+    public boolean deleteApplication(UUID id) {
+        return removeApplication(id); // your DB+cache remove method
+    }
+
+    @Transactional
+    public int recomputeMatchScoresForApplicant(UUID applicantId) {
+        Applicant applicant = em.find(Applicant.class, applicantId);
+        if (applicant == null) throw new NotFoundException("Applicant not found");
+
+        List<Application> apps = listApplicationsByApplicantId(applicantId);
+
+        int updated = 0;
+        for (Application app : apps) {
+            JobOffer offer = em.find(JobOffer.class, app.getJobOfferId());
+            if (offer == null) continue;
+
+            double score = computeMatchScore(
+                    applicants.getOrDefault(applicantId, applicant),
+                    jobOffers.getOrDefault(offer.getId(), offer)
+            );
+
+            updateApplicationMatchScore(app.getId(), score);
+            updated++;
+        }
+
+        return updated;
+    }
+
+    // ======================================================
+// APPLICANTS API (names used by your Resource)
+// ======================================================
+
+    public List<Applicant> listApplicants() {
+        return new ArrayList<>(applicants.values());
+    }
+
+    public Applicant findApplicant(UUID id) {
+        Applicant cached = applicants.get(id);
+        if (cached != null) return cached;
+
+        List<Applicant> list = em.createQuery(
+                "SELECT a FROM Applicant a LEFT JOIN FETCH a.skills WHERE a.id = :id", Applicant.class
+        ).setParameter("id", id).getResultList();
+
+        Applicant db = list.isEmpty() ? null : list.get(0);
+        if (db != null) applicants.put(id, db);
+        return db;
+    }
+
+    @Transactional
+    public Applicant createApplicant(Applicant a) {
+        return addApplicant(a);
+    }
+
+    @Transactional
+    public Applicant updateApplicant(UUID id, Applicant updated) {
+        Applicant managed = em.find(Applicant.class, id);
+        if (managed == null) return null;
+
+        // Copy scalar fields
+        managed.setFirstName(updated.getFirstName());
+        managed.setLastName(updated.getLastName());
+        managed.setEmail(updated.getEmail());
+        managed.setPhotoUrl(updated.getPhotoUrl());
+        managed.setContactInfo(updated.getContactInfo());
+        managed.setDescriptionInfo(updated.getDescriptionInfo());
+        managed.setCvInfo(updated.getCvInfo());
+
+        // Critically handle @ElementCollection updates
+        managed.getSkills().clear();
+        if (updated.getSkills() != null) {
+            managed.getSkills().addAll(updated.getSkills());
+        }
+
+        // Refresh cache
+        applicants.put(id, managed);
+        return managed;
+    }
+
+    @Transactional
+    public boolean deleteApplicant(UUID id) {
+        return removeApplicant(id);
+    }
+
+    @Transactional
+    public Applicant updateApplicantProfile(UUID id, Applicant incoming) {
+        Applicant managed = em.find(Applicant.class, id);
+        if (managed == null) throw new NotFoundException("Applicant not found");
+
+        managed.setFirstName(incoming.getFirstName());
+        managed.setLastName(incoming.getLastName());
+        managed.setEmail(incoming.getEmail());
+
+        managed.setPhotoUrl(incoming.getPhotoUrl());          // ✅ from User
+        managed.setContactInfo(incoming.getContactInfo());
+        managed.setDescriptionInfo(incoming.getDescriptionInfo());
+        managed.setCvInfo(incoming.getCvInfo());              // ✅ your field
+
+        // ✅ Robust ElementCollection update
+        managed.getSkills().clear();
+        if (incoming.getSkills() != null) {
+            managed.getSkills().addAll(incoming.getSkills());
+        }
+
+        applicants.put(id, managed); // refresh cache
+        return managed;
+    }
+
+
+    // ======================================================
+// COMPANIES API (names used by your Resource)
+// ======================================================
+
+    public List<Company> listCompanies() {
+        return new ArrayList<>(companies.values());
+    }
+
+    public Company findCompany(UUID id) {
+        Company c = companies.get(id);
+        if (c != null) return c;
+
+        Company db = em.find(Company.class, id);
+        if (db != null) companies.put(id, db);
+        return db;
+    }
+
+    @Transactional
+    public Company createCompany(Company c) {
+        return addCompany(c);
+    }
+
+    @Transactional
+    public Company updateCompany(UUID id, Company updated) {
+        boolean ok = setCompany(id, updated);
+        return ok ? findCompany(id) : null;
+    }
+
+    @Transactional
+    public boolean deleteCompany(UUID id) {
+        return removeCompany(id);
+    }
+
+    // ======================================================
+// EMPLOYERS API (names used by your Resource)
+// ======================================================
+
+    public List<Employer> listEmployers() {
+        return new ArrayList<>(employers.values());
+    }
+
+    public Employer findEmployer(UUID id) {
+        Employer e = employers.get(id);
+        if (e != null) return e;
+
+        Employer db = em.find(Employer.class, id);
+        if (db != null) employers.put(id, db);
+        return db;
+    }
+
+    @Transactional
+    public Employer createEmployer(Employer e) {
+        return addEmployer(e);
+    }
+
+    @Transactional
+    public Employer updateEmployer(UUID id, Employer updated) {
+        boolean ok = setEmployer(id, updated);
+        return ok ? findEmployer(id) : null;
+    }
+
+    @Transactional
+    public boolean deleteEmployer(UUID id) {
+        return removeEmployer(id);
+    }
+
+    public List<Company> listCompaniesByOwnerEmployerId(UUID ownerEmployerId) {
+        return companies.values().stream()
+                .filter(c -> ownerEmployerId.equals(c.getOwnerEmployerId()))
+                .collect(Collectors.toList());
+    }
+
+
 }

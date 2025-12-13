@@ -19,13 +19,16 @@ public class Applicant extends User {
     private String descriptionInfo;    // Profil du candidat
     @Column(length = 1000)
     private String cvInfo;             // CV sous forme de texte ou URL
-    @ElementCollection
-    @CollectionTable(
-            name = "applicant_skills",
-            joinColumns = @JoinColumn(name = "applicant_id")
-    )
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "applicant_skills", joinColumns = @JoinColumn(name = "applicant_id"))
     @Column(name = "skill", length = 100)
-    private List<String> skills = new ArrayList<>(); // compétences ESCO
+    private List<String> skills = new ArrayList<>();
+
+    @jakarta.json.bind.annotation.JsonbTransient
+    @OneToMany(mappedBy = "applicant")
+    private java.util.List<Application> applications = new java.util.ArrayList<>();
+
+
 
     // ======================================================
     // CONSTRUCTEURS
@@ -91,6 +94,8 @@ public class Applicant extends User {
         skills.remove(skill);
     }
 
+    public java.util.List<Application> getApplications() { return applications; }
+
 
     // ======================================================
     // OVERRIDE
@@ -110,13 +115,19 @@ public class Applicant extends User {
     }
 
     public void setSkillsAsString(String value) {
-        this.skills = new java.util.ArrayList<>();
-        if (value != null && !value.isBlank()) {
-            for (String s : value.split(",")) {
-                this.skills.add(s.trim());
+        if (this.skills == null) {
+            this.skills = new java.util.ArrayList<>();
+        }
+        if (value == null || value.isBlank()) {
+            return; // do not clear existing ESCO skills when the manual field is empty
+        }
+        for (String s : value.split(",")) {
+            String token = s == null ? "" : s.trim();
+            if (!token.isBlank() && !this.skills.contains(token)) {
+                this.skills.add(token);
             }
         }
-        }
+    }
 
 }
 

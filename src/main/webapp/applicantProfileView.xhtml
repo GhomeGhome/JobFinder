@@ -47,10 +47,15 @@
 
                     <h:panelGroup rendered="#{not empty profileViewBean.targetApplicant.cvInfo}">
                         <div style="margin-top:4px;">
-                            <a href="#{profileViewBean.targetApplicant.cvInfo}" target="_blank"
-                               class="btn-link" style="text-decoration: underline; color: #2563eb;">
-                                📄 View CV Document
-                            </a>
+                            <ui:fragment rendered="#{profileViewBean.isValidUrl(profileViewBean.targetApplicant.cvInfo)}">
+                                <a href="#{profileViewBean.targetApplicant.cvInfo}" target="_blank"
+                                   class="btn-link" style="text-decoration: underline; color: #2563eb;">
+                                    📄 View CV Document
+                                </a>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{not profileViewBean.isValidUrl(profileViewBean.targetApplicant.cvInfo)}">
+                                <span style="color: #6b7280;">CV text provided</span>
+                            </ui:fragment>
                             <div style="font-size: 11px; color: #9ca3af; margin-top: 2px; overflow: hidden; text-overflow: ellipsis;">
                                 #{profileViewBean.targetApplicant.cvInfo}
                             </div>
@@ -65,7 +70,7 @@
                 <div style="margin-top: 16px;">
                     <strong class="field-label">Skills</strong>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
-                        <ui:repeat value="#{profileViewBean.targetApplicant.skills}" var="skill">
+                        <ui:repeat value="#{profileViewBean.allTargetSkills}" var="skill">
                             <span class="status-badge" style="background: #e0f2fe; color: #0284c7;">#{skill}</span>
                         </ui:repeat>
                     </div>

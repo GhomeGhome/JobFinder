@@ -107,4 +107,6 @@ public class ApplicantBean implements Serializable {
         return null; // Reloads the page with the fresh data
     }
 
+
+
 }

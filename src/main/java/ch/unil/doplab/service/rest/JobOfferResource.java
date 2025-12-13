@@ -29,17 +29,11 @@ public class JobOfferResource {
     // GET /job-offers?employerId=...
     @GET
     public List<JobOffer> all(@QueryParam("employerId") String employerIdStr) {
-
-        var all = new java.util.ArrayList<>(state.getAllOffers().values());
-
         if (employerIdStr == null || employerIdStr.isBlank()) {
-            return all;
+            return state.listJobOffers(null);
         }
-
         UUID employerId = UUID.fromString(employerIdStr);
-        return all.stream()
-                .filter(o -> employerId.equals(o.getEmployerId()))
-                .toList();
+        return state.listJobOffers(employerId);
     }
 
     // GET /job-offers/{id}
@@ -47,7 +41,7 @@ public class JobOfferResource {
     @Path("/{id}")
     public JobOffer get(@PathParam("id") String idStr) {
         UUID id = UUID.fromString(idStr);
-        JobOffer o = state.getOffer(id);
+        JobOffer o = state.findJobOffer(id);
         if (o == null) throw new NotFoundException("JobOffer not found");
         return o;
     }
@@ -55,7 +49,7 @@ public class JobOfferResource {
     // POST /job-offers
     @POST
     public Response add(JobOffer offer, @Context UriInfo uriInfo) {
-        JobOffer created = state.addOffer(offer);
+        JobOffer created = state.createJobOffer(offer);
 
         URI location = uriInfo.getAbsolutePathBuilder()
                 .path(created.getId().toString())
@@ -71,11 +65,9 @@ public class JobOfferResource {
     @Path("/{id}")
     public JobOffer update(@PathParam("id") String idStr, JobOffer offer) {
         UUID id = UUID.fromString(idStr);
-
-        boolean ok = state.setOffer(id, offer);
-        if (!ok) throw new NotFoundException("JobOffer not found");
-
-        return state.getOffer(id);
+        JobOffer updated = state.updateJobOffer(id, offer);
+        if (updated == null) throw new NotFoundException("JobOffer not found");
+        return updated;
     }
 
     // DELETE /job-offers/{id}
@@ -83,8 +75,7 @@ public class JobOfferResource {
     @Path("/{id}")
     public Response remove(@PathParam("id") String idStr) {
         UUID id = UUID.fromString(idStr);
-
-        boolean removed = state.removeOffer(id);
+        boolean removed = state.deleteJobOffer(id);
         if (!removed) throw new NotFoundException("JobOffer not found");
 
         return Response.noContent().build();
@@ -100,7 +91,7 @@ public class JobOfferResource {
         UUID employerId = UUID.fromString(employerIdStr);
 
         try {
-            return state.publishOffer(offerId, employerId);
+            return state.publishJobOffer(offerId, employerId);
         } catch (NoSuchElementException ex) {
             throw new NotFoundException("JobOffer not found");
         } catch (SecurityException ex) {

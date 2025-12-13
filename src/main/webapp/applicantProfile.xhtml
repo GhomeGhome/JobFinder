@@ -15,6 +15,7 @@
 
             <div class="card" style="text-align: center; width: 250px; flex-shrink: 0;">
                 <img src="#{profileViewBean.getAvatarUrl(loginBean.loggedApplicant)}"
+                     id="bigAvatar"
                      alt="Avatar"
                      style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" />
 
@@ -24,16 +25,15 @@
 
                 <div class="field" style="text-align: left; margin-bottom: 16px;">
                     <label class="field-label" style="font-size: 12px;">Choose an Avatar</label>
-
-                    <input type="hidden" name="hiddenAvatarUrl" id="hiddenAvatarUrl" value="#{loginBean.loggedApplicant.photoUrl}" />
-
                     <script>
                         function selectAvatar(url) {
-                            document.getElementById("hiddenAvatarUrl").value = url; // Standard JS
+                            // Update hidden input inside the profile form so it gets submitted
+                            var hidden = document.getElementById("hiddenAvatarUrlForm");
+                            if (hidden) hidden.value = url;
 
                             // Update the visual image
-                            var bigImg = document.querySelector(".card img[alt='Avatar']");
-                            if(bigImg) bigImg.src = url;
+                            var bigImg = document.getElementById("bigAvatar");
+                            if (bigImg) bigImg.src = url;
                         }
                     </script>
 
@@ -59,18 +59,6 @@
                              style="width: 45px; height: 45px; cursor: pointer; border-radius: 50%; transition: transform 0.2s;"
                              onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" />
                     </div>
-
-                    <script>
-                        function selectAvatar(url) {
-                            // Update hidden input
-                            var input = document.querySelector("input[type='hidden'][id$='avatarUrlInput']");
-                            if(input) input.value = url;
-
-                            // Update big image
-                            var bigImg = document.querySelector(".card img[alt='Avatar']");
-                            if(bigImg) bigImg.src = url;
-                        }
-                    </script>
                 </div>
 
                 <h:link outcome="/applicantProfileView.xhtml" styleClass="btn btn-light btn-full">
@@ -125,6 +113,8 @@
 
             <div class="card" style="flex-grow: 1; min-width: 300px;">
                 <h:form>
+                    <input type="hidden" name="hiddenAvatarUrl" id="hiddenAvatarUrlForm"
+                           value="#{loginBean.loggedApplicant.photoUrl}" />
                     <h:messages globalOnly="true"
                                 style="list-style:none; padding:0; margin-bottom:16px;"
                                 infoStyle="color: #15803d; background-color: #dcfce7; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0; display: block;"

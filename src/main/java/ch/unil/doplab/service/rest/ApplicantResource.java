@@ -3,12 +3,10 @@ package ch.unil.doplab.service.rest;
 import ch.unil.doplab.Applicant;
 import ch.unil.doplab.service.domain.ApplicationState;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,22 +20,21 @@ public class ApplicantResource {
 
     @GET
     public List<Applicant> getAll() {
-        return new ArrayList<>(state.getAllApplicants().values());
+        return state.listApplicants();
     }
 
     @GET
     @Path("/{id}")
     public Applicant getById(@PathParam("id") String idStr) {
         UUID id = UUID.fromString(idStr);
-        Applicant a = state.getApplicant(id);
+        Applicant a = state.findApplicant(id);
         if (a == null) throw new NotFoundException("Applicant not found");
         return a;
     }
 
-
     @POST
     public Response create(Applicant applicant, @Context UriInfo uriInfo) {
-        Applicant created = state.addApplicant(applicant);
+        Applicant created = state.createApplicant(applicant);
 
         URI location = uriInfo.getAbsolutePathBuilder()
                 .path(created.getId().toString())
@@ -48,21 +45,11 @@ public class ApplicantResource {
 
     @PUT
     @Path("/{id}")
-    @Transactional
     public Applicant updateApplicant(@PathParam("id") String idStr, Applicant updated) {
         UUID id = UUID.fromString(idStr);
-
-        System.out.println(">>> SERVER DEBUG: Received Photo URL: " + updated.getPhotoUrl());
-
-        // Make sure the updated object keeps the same ID
-        updated.setId(id);
-
-        boolean ok = state.setApplicant(id, updated);   // we'll define this next
-        if (!ok) {
-            throw new NotFoundException("Applicant not found");
-        }
-
-        return state.getApplicant(id);
+        Applicant result = state.updateApplicantProfile(id, updated);
+        if (result == null) throw new NotFoundException("Applicant not found");
+        return result;
     }
 
     @DELETE
@@ -70,7 +57,7 @@ public class ApplicantResource {
     public Response delete(@PathParam("id") String idStr) {
         UUID id = UUID.fromString(idStr);
 
-        boolean ok = state.removeApplicant(id);        // needs removeApplicant in ApplicationState
+        boolean ok = state.deleteApplicant(id);
         if (!ok) throw new NotFoundException("Applicant not found");
 
         return Response.noContent().build();

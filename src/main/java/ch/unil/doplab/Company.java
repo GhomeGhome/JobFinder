@@ -27,6 +27,14 @@ public class Company {
     @Lob
     private String description;
 
+    @jakarta.json.bind.annotation.JsonbTransient
+    @OneToMany(mappedBy = "company")
+    private java.util.List<JobOffer> jobOffers = new java.util.ArrayList<>();
+
+    @jakarta.json.bind.annotation.JsonbTransient
+    @OneToMany(mappedBy = "company")
+    private java.util.List<Employer> employers = new java.util.ArrayList<>();
+
     // For now we **do not persist** these lists – we can always add proper
     // relations later if needed. They are only used in memory.
     @Transient
@@ -83,6 +91,9 @@ public class Company {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public java.util.List<JobOffer> getJobOffersRel() { return jobOffers; }
+    public java.util.List<Employer> getEmployersRel() { return employers; }
 
 
     // ======================================================

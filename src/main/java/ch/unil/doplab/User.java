@@ -29,6 +29,7 @@ public abstract class User {
     private String lastName;
     @Column(name = "email", length = 255)
     private String email;
+    @Column(length = 1000)
     private String photoUrl;
 
     // Un User peut être lié à plusieurs JobOffers (Employeur)

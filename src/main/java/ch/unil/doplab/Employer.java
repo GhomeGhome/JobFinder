@@ -1,6 +1,7 @@
 package ch.unil.doplab;
 
 import jakarta.persistence.*;
+import jakarta.json.bind.annotation.JsonbTransient;
 
 import java.util.UUID;
 
@@ -18,6 +19,15 @@ public class Employer extends User {
     private String enterpriseName;
     @Column(name = "company_id")
     private UUID companyId;   // lien vers la Company représentée
+
+    @JsonbTransient
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", insertable = false, updatable = false)
+    private Company company;
+
+    @JsonbTransient
+    @OneToMany(mappedBy = "employer", cascade = CascadeType.ALL, orphanRemoval = false)
+    private java.util.List<JobOffer> jobOffers = new java.util.ArrayList<>();
 
     // ======================================================
     // CONSTRUCTEURS
@@ -63,6 +73,14 @@ public class Employer extends User {
 
     public void setDescriptionInfo(String descriptionInfo) {
         this.descriptionInfo = descriptionInfo;
+    }
+
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
+
+    public java.util.List<JobOffer> getJobOffers() { return jobOffers; }
+    public void setJobOffers(java.util.List<JobOffer> jobOffers) {
+        this.jobOffers = (jobOffers != null) ? jobOffers : new java.util.ArrayList<>();
     }
 
     // ======================================================

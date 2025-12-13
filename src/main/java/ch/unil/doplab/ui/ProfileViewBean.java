@@ -74,8 +74,11 @@ public class ProfileViewBean implements Serializable {
         return "https://ui-avatars.com/api/?name=" + cleanName + "&background=random&size=128";
     }
 
-    private boolean isValidUrl(String url) {
-        return url != null && !url.isBlank();
+
+    public boolean isValidUrl(String url) {
+        return url != null
+                && !url.isBlank()
+                && (url.startsWith("http://") || url.startsWith("https://"));
     }
 
     // --- GETTERS & SETTERS ---
@@ -86,4 +89,24 @@ public class ProfileViewBean implements Serializable {
     public Applicant getTargetApplicant() { return targetApplicant; }
     public Employer getTargetEmployer() { return targetEmployer; }
     public Company getTargetCompany() { return targetCompany; }
+
+    // Unified skills view: merge list skills and CSV manual skills, deduplicated
+    public java.util.List<String> getAllTargetSkills() {
+        java.util.LinkedHashSet<String> set = new java.util.LinkedHashSet<>();
+        if (targetApplicant != null) {
+            if (targetApplicant.getSkills() != null) {
+                for (String s : targetApplicant.getSkills()) {
+                    if (s != null && !s.isBlank()) set.add(s.trim());
+                }
+            }
+            String csv = targetApplicant.getSkillsAsString();
+            if (csv != null && !csv.isBlank()) {
+                for (String token : csv.split(",")) {
+                    String t = token.trim();
+                    if (!t.isBlank()) set.add(t);
+                }
+            }
+        }
+        return new java.util.ArrayList<>(set);
+    }
 }

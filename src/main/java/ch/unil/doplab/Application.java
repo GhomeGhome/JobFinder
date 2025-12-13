@@ -26,6 +26,14 @@ public class Application {
     @Column(name = "applicant_id")
     private UUID applicantId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "job_offer_id", insertable = false, updatable = false)
+    private JobOffer jobOffer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "applicant_id", insertable = false, updatable = false)
+    private Applicant applicant;
+
     private String cvUrl;                  // lien ou contenu du CV
 
     @Column(name = "submitted_at")
@@ -143,6 +151,12 @@ public class Application {
     public Double getMatchScore() { return matchScore; }
     public void setMatchScore(Double matchScore) { this.matchScore = matchScore; }
 
+
+    public JobOffer getJobOffer() { return jobOffer; }
+    public void setJobOffer(JobOffer jobOffer) { this.jobOffer = jobOffer; }
+
+    public Applicant getApplicant() { return applicant; }
+    public void setApplicant(Applicant applicant) { this.applicant = applicant; }
 
     // ======================================================
     // MÉTHODES UTILITAIRES
