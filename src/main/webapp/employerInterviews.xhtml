@@ -58,12 +58,9 @@
                     <span class="field-label">Date &amp; time</span>
                     <!-- simple text input with DateTime converter; pattern can be whatever you like -->
                     <h:inputText value="#{interviewBean.scheduledAt}"
-                                 styleClass="input-full">
-                        <f:convertDateTime pattern="yyyy-MM-dd HH:mm" />
+                                 styleClass="input-full"
+                                 type="date"> <f:convertDateTime pattern="yyyy-MM-dd" type="localDate"/>
                     </h:inputText>
-                    <small style="font-size: 12px; color: #6b7280;">
-                        Format: 2025-12-01 14:30
-                    </small>
                 </div>
 
                 <!-- Mode (optional) -->

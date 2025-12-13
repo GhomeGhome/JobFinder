@@ -52,6 +52,8 @@ public class ApplicantResource {
     public Applicant updateApplicant(@PathParam("id") String idStr, Applicant updated) {
         UUID id = UUID.fromString(idStr);
 
+        System.out.println(">>> SERVER DEBUG: Received Photo URL: " + updated.getPhotoUrl());
+
         // Make sure the updated object keeps the same ID
         updated.setId(id);
 

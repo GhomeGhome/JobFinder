@@ -260,4 +260,21 @@ public class JobFinderClient {
                 .get(new GenericType<List<Map<String, Object>>>() {});
     }
 
+    // Add this to JobFinderClient.java
+    public boolean updateApplication(ch.unil.doplab.Application app) {
+        try {
+            // Debug print to confirm it is being called
+            System.out.println(">>> CLIENT: Sending PUT request for Application ID: " + app.getId() + " with Status: " + app.getStatus());
+
+            target.path("applications")
+                    .path(app.getId().toString())
+                    .request(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+                    .put(jakarta.ws.rs.client.Entity.json(app));
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 }

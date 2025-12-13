@@ -12,6 +12,8 @@ import java.util.UUID;
 @Table(name = "employers")
 public class Employer extends User {
 
+    private String descriptionInfo;
+
     @Column(length = 255)
     private String enterpriseName;
     @Column(name = "company_id")
@@ -55,6 +57,13 @@ public class Employer extends User {
     public UUID getCompanyId() { return companyId; }
     public void setCompanyId(UUID companyId) { this.companyId = companyId; }
 
+    public String getDescriptionInfo() {
+        return descriptionInfo;
+    }
+
+    public void setDescriptionInfo(String descriptionInfo) {
+        this.descriptionInfo = descriptionInfo;
+    }
 
     // ======================================================
     // OVERRIDES

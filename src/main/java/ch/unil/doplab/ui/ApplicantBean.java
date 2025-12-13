@@ -8,6 +8,8 @@ import ch.unil.doplab.client.JobFinderClient;
 // import ch.unil.doplab.service.domain.ApplicationState; // REMOVED: No direct DB access
 
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.faces.application.FacesMessage;
+import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable; // Good practice for Beans
@@ -79,4 +81,30 @@ public class ApplicantBean implements Serializable {
         Company comp = client.getCompany(job.getCompanyId());
         return (comp != null) ? comp.getName() : "Unknown Company";
     }
+
+    public String updateStatus(ch.unil.doplab.Application app) {
+        if (app != null) {
+            // 1. Send the update to the server
+            boolean success = client.updateApplication(app);
+
+            if (success) {
+                // 2. CRITICAL STEP: Refresh the local session data
+                // We ask the server for the fresh Employer object (which includes the updated application list)
+                ch.unil.doplab.Employer freshEmployer = client.getEmployer(loginBean.getLoggedEmployer().getId());
+
+                // 3. Update the LoginBean so the page shows the new data
+                if (freshEmployer != null) {
+                    loginBean.setLoggedEmployer(freshEmployer);
+                }
+
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Status updated to " + app.getStatus()));
+            } else {
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Could not update status."));
+            }
+        }
+        return null; // Reloads the page with the fresh data
+    }
+
 }

@@ -50,7 +50,7 @@
             </div>
         </div>
 
-        <div class="card">
+        <h:form>
             <h:dataTable value="#{applicationBean.applicationsForLoggedEmployer}"
                          var="a"
                          styleClass="job-table">
@@ -62,14 +62,29 @@
 
                 <h:column>
                     <f:facet name="header">Candidate</f:facet>
-                    #{applicationBean.getApplicantName(a.applicantId)}
+                    <h:link outcome="applicantProfileView.xhtml"
+                            value="#{applicationBean.getApplicantName(a.applicantId)}"
+                            style="font-weight: bold; color: #2563eb; text-decoration: underline;">
+                        <f:param name="id" value="#{a.applicantId}" />
+                    </h:link>
                 </h:column>
 
                 <h:column>
                     <f:facet name="header">Status</f:facet>
-                    <span class="status-badge">
-                        #{a.status}
-                    </span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                    <h:selectOneMenu value="#{a.status}"
+                                     style="padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+
+                        <f:selectItem itemValue="Submitted" itemLabel="Submitted" itemDisabled="true" />
+                        <f:selectItem itemValue="In_review" itemLabel="In Review" />
+                        <f:selectItem itemValue="Accepted" itemLabel="Accepted" />
+                        <f:selectItem itemValue="Rejected" itemLabel="Rejected" />
+                        <f:ajax execute="@this" />
+                    </h:selectOneMenu>
+                    <h:commandButton value="Update"
+                                     action="#{applicationBean.updateStatus(a)}"
+                                     style="background-color: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;" />
+                    </div>
                 </h:column>
 
                 <h:column>
@@ -93,8 +108,41 @@
                     #{a.dateApplied}
                 </h:column>
 
+                <h:column>
+                    <f:facet name="header">Action</f:facet>
+
+                    <h:panelGroup rendered="#{a.status == 'Accepted'}">
+                        <h:link outcome="employerInterviews.xhtml"
+                                value="📅 Schedule Interview"
+                                styleClass="btn-small"
+                                style="background-color: #15803d; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">
+                            <f:param name="candidateName" value="#{applicationBean.getApplicantName(a.applicantId)}" />
+                        </h:link>
+                    </h:panelGroup>
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Action</f:facet>
+
+                    <h:panelGroup rendered="#{a.status == 'Accepted'}">
+
+                        <h:link outcome="employerInterviews.xhtml"
+                                style="display: inline-block; background-color: #15803d; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold;">
+
+                            📅 Schedule Interview
+
+                            <f:param name="candidateName" value="#{applicationBean.getApplicantName(a.applicantId)}" />
+                        </h:link>
+
+                    </h:panelGroup>
+
+                    <h:panelGroup rendered="#{a.status != 'Accepted'}">
+                        <span style="color: #9ca3af; font-size: 12px; font-style: italic;">No actions yet</span>
+                    </h:panelGroup>
+                </h:column>
+
             </h:dataTable>
-        </div>
+        </h:form>
 
     </ui:define>
 

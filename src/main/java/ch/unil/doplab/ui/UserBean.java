@@ -21,56 +21,46 @@ public class UserBean implements Serializable {
     public String updateProfile() {
         boolean success = false;
 
-        if (loginBean.isApplicant()) {
-            // 1. Send applicant data
-            success = client.updateApplicant(loginBean.getLoggedApplicant());
+        // 1. FORCE GET THE URL FROM THE HIDDEN INPUT
+        String newPhotoUrl = FacesContext.getCurrentInstance()
+                .getExternalContext().getRequestParameterMap().get("hiddenAvatarUrl");
 
-            // 2. Refresh applicant session
-            if (success) {
-                ch.unil.doplab.Applicant freshData = client.getApplicant(loginBean.getLoggedApplicant().getId());
-                if (freshData != null) {
-                    loginBean.setLoggedApplicant(freshData);
-                }
+        // --- APPLICANT LOGIC ---
+        if (loginBean.isApplicant()) {
+            // If the user selected something, force it into the object BEFORE sending
+            if (newPhotoUrl != null && !newPhotoUrl.isBlank()) {
+                loginBean.getLoggedApplicant().setPhotoUrl(newPhotoUrl);
             }
 
-        } else if (loginBean.isEmployer()) {
-            // 1. Update Employer Personal Info (First Name, Last Name, Photo...)
+            success = client.updateApplicant(loginBean.getLoggedApplicant());
+            // Do not fetch fresh data.
+        }
+
+        // --- EMPLOYER LOGIC ---
+        else if (loginBean.isEmployer()) {
+            if (newPhotoUrl != null && !newPhotoUrl.isBlank()) {
+                loginBean.getLoggedEmployer().setPhotoUrl(newPhotoUrl);
+            }
+
             success = client.updateEmployer(loginBean.getLoggedEmployer());
 
-            // 2. Update Company Info (City, Description...)
             if (loginBean.getLoggedCompany() != null) {
-                // We attempt to update the company too
                 boolean companySuccess = client.updateCompany(loginBean.getLoggedCompany());
-
-                // If the personal update worked AND company update worked, we call it a total success
                 success = success && companySuccess;
             }
+            // Do not fetch fresh data.
 
-            // 3. Refresh Session
-            if (success) {
-                // Refresh Employer
-                ch.unil.doplab.Employer freshEmployer = client.getEmployer(loginBean.getLoggedEmployer().getId());
-                if (freshEmployer != null) {
-                    loginBean.setLoggedEmployer(freshEmployer);
-                }
-
-                // Refresh Company
-                if (loginBean.getLoggedCompany() != null) {
-                    ch.unil.doplab.Company freshCompany = client.getCompany(loginBean.getLoggedCompany().getId());
-                    if (freshCompany != null) {
-                        loginBean.setLoggedCompany(freshCompany);
-                    }
-                }
-            }
+            // 3. CRITICAL: DO NOT fetch from server.
+            // We trust the local session data.
         }
 
         if (success) {
             FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Profile and Company updated."));
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Profile updated."));
         } else {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Update failed."));
         }
         return null;
     }
-}
+ }

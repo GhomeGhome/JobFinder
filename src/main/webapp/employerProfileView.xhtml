@@ -12,23 +12,22 @@
     </f:metadata>
 
     <ui:define name="content">
-        <h:link outcome="applicantJobs"
-                value="← Back to jobs"
-                styleClass="btn-link"
-                style="margin-bottom:16px; display:inline-block;"
-                rendered="#{loginBean.isApplicant()}" />
 
-        <h:link outcome="employerProfile"
-                value="← Back to Edit Profile"
-                styleClass="btn-link"
-                style="margin-bottom:16px; display:inline-block;"
-                rendered="#{loginBean.isEmployer()}" />
+        <button onclick="window.history.back();"
+                class="btn"
+                style="margin-bottom: 20px; display: inline-block; background-color: #6b7280; color: white; padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 14px;">
+            ⬅ Back
+        </button>
 
         <div class="card" style="display: flex; gap: 32px; align-items: start;">
             <div style="text-align: center; min-width: 150px;">
                 <img src="#{profileViewBean.getAvatarUrl(profileViewBean.targetEmployer)}"
                      alt="Profile Pic"
-                     style="border-radius: 12px; width: 120px; height: 120px; object-fit: cover; margin-bottom: 12px;" />
+                     style="border-radius: 12px; width: 120px; height: 120px; object-fit: cover; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" />
+
+                <div>
+                    <span class="status-badge" style="background-color: #e0e7ff; color: #4338ca;">Employer</span>
+                </div>
             </div>
 
             <div style="flex-grow: 1;">
@@ -37,7 +36,16 @@
 
                 <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
 
-                <h3 style="font-size: 18px; margin-bottom: 12px;">Company Details</h3>
+                <h:panelGroup rendered="#{not empty profileViewBean.targetEmployer.descriptionInfo}">
+                    <div style="margin-bottom: 24px;">
+                        <strong class="field-label">About Me / Role</strong>
+                        <p style="margin-top: 4px;">#{profileViewBean.targetEmployer.descriptionInfo}</p>
+                    </div>
+                </h:panelGroup>
+
+                <h3 style="font-size: 18px; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                    Company Details
+                </h3>
 
                 <h:panelGroup rendered="#{not empty profileViewBean.targetCompany}">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">

@@ -16,18 +16,59 @@
             <div class="card" style="text-align: center; width: 250px; flex-shrink: 0;">
                 <img src="#{profileViewBean.getAvatarUrl(loginBean.loggedEmployer)}"
                      alt="Avatar"
-                     style="width: 120px; height: 120px; border-radius: 12px; object-fit: cover; margin-bottom: 16px;" />
+                     style="width: 120px; height: 120px; border-radius: 12px; object-fit: cover; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);" />
 
                 <div style="margin-bottom: 16px;">
                     <span class="status-badge" style="background-color: #e0e7ff; color: #4338ca;">Employer</span>
                 </div>
 
                 <div class="field" style="text-align: left; margin-bottom: 16px;">
-                    <label class="field-label" style="font-size: 12px;">Profile Picture URL</label>
-                    <h:inputText value="#{loginBean.loggedEmployer.photoUrl}"
-                                 styleClass="input-full"
-                                 style="font-size: 12px; padding: 8px;"
-                                 placeholder="Paste image link (https://...)" />
+                    <label class="field-label" style="font-size: 12px;">Choose an Avatar</label>
+
+                    <input type="hidden" name="hiddenAvatarUrl" id="hiddenAvatarUrl" value="#{loginBean.loggedEmployer.photoUrl}" />
+
+                    <script>
+                        function selectAvatar(url) {
+                            document.getElementById("hiddenAvatarUrl").value = url; // Standard JS
+
+                            // Update the visual image
+                            var bigImg = document.querySelector(".card img[alt='Avatar']");
+                            if(bigImg) bigImg.src = url;
+                        }
+                    </script>
+
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; justify-content: center;">
+
+                        <img src="https://avataaars.io/?avatarStyle=Circle&amp;topType=ShortHairShortFlat&amp;accessoriesType=Sunglasses&amp;hairColor=Black&amp;facialHairType=Blank&amp;clotheType=Hoodie&amp;clotheColor=Red&amp;eyeType=Happy&amp;eyebrowType=Default&amp;mouthType=Smile&amp;skinColor=Light"
+                             onclick="selectAvatar(this.src)" title="Option 1"
+                             style="width: 45px; height: 45px; cursor: pointer; border-radius: 50%; transition: transform 0.2s;"
+                             onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" />
+
+                        <img src="https://avataaars.io/?avatarStyle=Circle&amp;topType=LongHairStraight&amp;accessoriesType=Blank&amp;hairColor=BrownDark&amp;facialHairType=Blank&amp;clotheType=BlazerShirt&amp;eyeType=Default&amp;eyebrowType=Default&amp;mouthType=Default&amp;skinColor=Light"
+                             onclick="selectAvatar(this.src)" title="Option 2"
+                             style="width: 45px; height: 45px; cursor: pointer; border-radius: 50%; transition: transform 0.2s;"
+                             onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" />
+
+                        <img src="https://avataaars.io/?avatarStyle=Circle&amp;topType=ShortHairDreads01&amp;accessoriesType=Blank&amp;hairColor=Black&amp;facialHairType=BeardLight&amp;clotheType=BlazerSweater&amp;eyeType=Happy&amp;eyebrowType=Default&amp;mouthType=Smile&amp;skinColor=Brown"
+                             onclick="selectAvatar(this.src)" title="Option 3"
+                             style="width: 45px; height: 45px; cursor: pointer; border-radius: 50%; transition: transform 0.2s;"
+                             onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" />
+
+                        <img src="https://avataaars.io/?avatarStyle=Circle&amp;topType=NoHair&amp;accessoriesType=Prescription02&amp;hairColor=Black&amp;facialHairType=MoustacheMagnum&amp;clotheType=BlazerShirt&amp;eyeType=Default&amp;eyebrowType=Default&amp;mouthType=Default&amp;skinColor=Light"
+                             onclick="selectAvatar(this.src)" title="Option 4"
+                             style="width: 45px; height: 45px; cursor: pointer; border-radius: 50%; transition: transform 0.2s;"
+                             onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" />
+                    </div>
+
+                    <script>
+                        function selectAvatar(url) {
+                            var input = document.querySelector("input[type='hidden'][id$='avatarUrlInput']");
+                            if(input) input.value = url;
+
+                            var bigImg = document.querySelector(".card img[alt='Avatar']");
+                            if(bigImg) bigImg.src = url;
+                        }
+                    </script>
                 </div>
 
                 <h:link outcome="/employerProfileView.xhtml" styleClass="btn btn-light btn-full">
@@ -38,7 +79,10 @@
 
             <div class="card" style="flex-grow: 1; min-width: 300px;">
                 <h:form>
-                    <h:messages styleClass="form-messages" />
+                    <h:messages globalOnly="true"
+                                style="list-style:none; padding:0; margin-bottom:16px;"
+                                infoStyle="color: #15803d; background-color: #dcfce7; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0; display: block;"
+                                errorStyle="color: #b91c1c; background-color: #fee2e2; padding: 10px; border-radius: 6px; border: 1px solid #fecaca; display: block;" />
 
                     <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
                         Personal Information
@@ -56,8 +100,11 @@
                     </div>
 
                     <div class="field">
-                        <span class="field-label">Enterprise Name (Your Role)</span>
-                        <h:inputText value="#{loginBean.loggedEmployer.enterpriseName}" styleClass="input-full" />
+                        <span class="field-label">About Me (Your Role)</span>
+                        <h:inputTextarea value="#{loginBean.loggedEmployer.descriptionInfo}"
+                                         styleClass="input-full"
+                                         rows="3"
+                                         placeholder="Briefly describe your role (e.g. Hiring Manager at...)" />
                     </div>
 
                     <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 8px;">

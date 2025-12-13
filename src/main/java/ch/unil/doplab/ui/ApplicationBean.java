@@ -10,9 +10,12 @@ import java.util.*;
 import java.util.ArrayList;
 
 import jakarta.enterprise.context.SessionScoped;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
+import jakarta.faces.application.FacesMessage;
+import jakarta.faces.context.FacesContext;
 import java.util.stream.Collectors;
 
 @Named("applicationBean")
@@ -31,6 +34,31 @@ public class ApplicationBean implements Serializable {
     private UUID filterJobOfferId;
 
     // --- Actions ---
+
+    public String updateStatus(ch.unil.doplab.Application app) {
+        if (app != null) {
+            // 1. Send the update to the server
+            boolean success = client.updateApplication(app);
+
+            if (success) {
+                // 2. CRITICAL STEP: Refresh the local session data
+                // We ask the server for the fresh Employer object (which includes the updated application list)
+                ch.unil.doplab.Employer freshEmployer = client.getEmployer(loginBean.getLoggedEmployer().getId());
+
+                // 3. Update the LoginBean so the page shows the new data
+                if (freshEmployer != null) {
+                    loginBean.setLoggedEmployer(freshEmployer);
+                }
+
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Status updated to " + app.getStatus()));
+            } else {
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Could not update status."));
+            }
+        }
+        return null; // Reloads the page with the fresh data
+    }
 
     /**
      * Called when clicking "View applicants" on the dashboard.

@@ -12,23 +12,17 @@
     </f:metadata>
 
     <ui:define name="content">
-        <h:link outcome="employerApplicants"
-                value="← Back to list"
-                styleClass="btn-link"
-                style="margin-bottom:16px; display:inline-block;"
-                rendered="#{loginBean.isEmployer()}" />
 
-        <h:link outcome="applicantProfile"
-                value="← Back to Edit Profile"
-                styleClass="btn-link"
-                style="margin-bottom:16px; display:inline-block;"
-                rendered="#{loginBean.isApplicant()}" />
-
+        <button onclick="window.history.back();"
+                class="btn"
+                style="margin-bottom: 20px; display: inline-block; background-color: #6b7280; color: white; padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 14px;">
+            ⬅ Back
+        </button>
         <div class="card" style="display: flex; gap: 32px; align-items: start;">
             <div style="text-align: center; min-width: 150px;">
                 <img src="#{profileViewBean.getAvatarUrl(profileViewBean.targetApplicant)}"
                      alt="Profile Pic"
-                     style="border-radius: 50%; width: 120px; height: 120px; object-fit: cover; margin-bottom: 12px;" />
+                     style="border-radius: 50%; width: 120px; height: 120px; object-fit: cover; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" />
                 <div>
                     <span class="status-badge">Applicant</span>
                 </div>
@@ -50,7 +44,22 @@
 
                 <div style="margin-top: 16px;">
                     <strong class="field-label">CV / Resume</strong>
-                    <p>#{profileViewBean.targetApplicant.cvInfo}</p>
+
+                    <h:panelGroup rendered="#{not empty profileViewBean.targetApplicant.cvInfo}">
+                        <div style="margin-top:4px;">
+                            <a href="#{profileViewBean.targetApplicant.cvInfo}" target="_blank"
+                               class="btn-link" style="text-decoration: underline; color: #2563eb;">
+                                📄 View CV Document
+                            </a>
+                            <div style="font-size: 11px; color: #9ca3af; margin-top: 2px; overflow: hidden; text-overflow: ellipsis;">
+                                #{profileViewBean.targetApplicant.cvInfo}
+                            </div>
+                        </div>
+                    </h:panelGroup>
+
+                    <h:panelGroup rendered="#{empty profileViewBean.targetApplicant.cvInfo}">
+                        <p style="color: #9ca3af; font-style: italic;">No CV uploaded yet.</p>
+                    </h:panelGroup>
                 </div>
 
                 <div style="margin-top: 16px;">

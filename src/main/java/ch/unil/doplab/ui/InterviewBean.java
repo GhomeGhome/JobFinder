@@ -33,6 +33,7 @@ public class InterviewBean implements Serializable {
     private String mode; // "ONLINE", "ONSITE", "PHONE"
     private String locationOrLink;
 
+
     // you already have these UI beans in your app
     @Inject
     private JobOfferBean jobOfferBean;
