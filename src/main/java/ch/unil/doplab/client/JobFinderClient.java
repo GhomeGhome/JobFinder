@@ -261,20 +261,21 @@ public class JobFinderClient {
             Date scheduledAt,
             String mode,
             String locationOrLink) {
-        Map<String, Object> body = Map.of(
-                "jobOfferId", jobOfferId.toString(),
-                "applicantId", applicantId.toString(),
-                "scheduledAtMillis", scheduledAt.getTime(),
-                "mode", mode,
-                "locationOrLink", locationOrLink);
+        // Use HashMap instead of Map.of() to allow null values
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("jobOfferId", jobOfferId.toString());
+        body.put("applicantId", applicantId.toString());
+        body.put("scheduledAtMillis", scheduledAt.getTime());
+        body.put("mode", mode != null ? mode : "ONLINE");
+        body.put("locationOrLink", locationOrLink != null ? locationOrLink : "");
 
         return client.target(BASE_URL + "/interviews")
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(body), Interview.class);
     }
 
-    public Interview updateInterviewStatus(Long interviewId, String status) {
-        return client.target(BASE_URL + "/interviews/" + interviewId + "/status/" + status)
+    public Interview updateInterviewStatus(UUID interviewId, String status) {
+        return client.target(BASE_URL + "/interviews/" + interviewId.toString() + "/status/" + status)
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(""), Interview.class);
     }

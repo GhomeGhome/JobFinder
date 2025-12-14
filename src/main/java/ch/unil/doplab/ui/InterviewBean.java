@@ -282,7 +282,7 @@ public class InterviewBean implements Serializable {
         return null;
     }
 
-    public String reschedule(Long id) {
+    public String reschedule(java.util.UUID id) {
         // For now: just mark as SCHEDULED again; you can implement a real reschedule
         // flow later
         if (id != null) {
@@ -294,7 +294,7 @@ public class InterviewBean implements Serializable {
         return null;
     }
 
-    public String cancel(Long id) {
+    public String cancel(java.util.UUID id) {
         if (id != null) {
             try {
                 client.updateInterviewStatus(id, InterviewStatus.CANCELED.name());

@@ -234,6 +234,7 @@ public class ApplicationState {
         }
 
         Interview iv = new Interview();
+        iv.setId(UUID.randomUUID()); // Generate UUID before persist
         iv.setJobOfferId(jobOfferId);
         iv.setApplicantId(applicantId);
         iv.setScheduledAt(scheduledAt);
