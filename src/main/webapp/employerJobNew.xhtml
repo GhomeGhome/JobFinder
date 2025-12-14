@@ -5,6 +5,10 @@
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
                 template="/TEMPLATES/employerTemplate.xhtml">
 
+    <f:metadata>
+        <f:viewAction action="#{employerJobFormBean.resetForm}" onPostback="false" />
+    </f:metadata>
+
     <ui:define name="title">
         New Job Post – JobFinder
     </ui:define>
@@ -77,9 +81,9 @@
                                      placeholder="e.g., java, sql, spring" />
                         <h:commandButton value="Add"
                                          action="#{employerJobFormBean.addRequiredSkill}"
-                                         styleClass="btn"
-                                         type="button">
-                            <f:ajax render="requiredSkillsPanel reqSkillInput" />
+                                         styleClass="btn btn-primary"
+                                         style="padding: 8px 16px;">
+                            <f:ajax execute="reqSkillInput" render="requiredSkillsPanel reqSkillInput" />
                         </h:commandButton>
                     </div>
                     <small style="color:#6b7280;">Add one or multiple (comma-separated). They will be used to compute match scores.</small>
@@ -106,18 +110,22 @@
                 <div class="field">
                     <span class="field-label">Search skills (ESCO)</span>
                     <h:inputText value="#{jobReqBean.skillQuery}" styleClass="input-full" id="escoSkillQuery">
-                        <f:ajax event="keyup" listener="#{jobReqBean.refreshSkillSuggestions}" render="escoSkillSuggestions escoSelectedSkills" />
+                        <f:ajax event="keyup" execute="@this" listener="#{jobReqBean.refreshSkillSuggestions}" render="escoSkillSuggestions escoSelectedSkills" />
                     </h:inputText>
 
                     <h:panelGroup id="escoSkillSuggestions">
                         <ui:fragment rendered="#{not empty jobReqBean.skillSuggestions}">
-                            <ul class="suggestions-list" style="background:white; border:1px solid #ddd; list-style:none; padding:0; margin-top:8px;">
+                            <ul class="suggestions-list" style="background:white; border:1px solid #ddd; list-style:none; padding:0; margin-top:8px; border-radius:8px;">
                                 <ui:repeat value="#{jobReqBean.skillSuggestions}" var="s">
-                                    <li style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
-                                        #{s['label']}
-                                        <h:commandLink value="Add" style="color:#2563eb; font-weight:bold;" action="#{jobReqBean.addSkill(s)}">
+                                    <li style="padding:10px 12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                                        <h:outputText value="#{s['label']}" />
+                                        <h:commandButton value="+ Add" 
+                                                         actionListener="#{jobReqBean.addSelectedSkill}"
+                                                         immediate="true"
+                                                         style="background:#22c55e; color:white; padding:4px 12px; font-size:12px; border:none; border-radius:4px; cursor:pointer;">
+                                            <f:setPropertyActionListener target="#{jobReqBean.selectedSkillLabel}" value="#{s['label']}" />
                                             <f:ajax render="requiredSkillsPanel escoSelectedSkills" />
-                                        </h:commandLink>
+                                        </h:commandButton>
                                     </li>
                                 </ui:repeat>
                             </ul>
@@ -144,18 +152,22 @@
                 <div class="field">
                     <span class="field-label">Search qualifications (ESCO)</span>
                     <h:inputText value="#{jobReqBean.qualificationQuery}" styleClass="input-full" id="escoQualQuery">
-                        <f:ajax event="keyup" listener="#{jobReqBean.refreshQualificationSuggestions}" render="escoQualSuggestions escoSelectedQuals" />
+                        <f:ajax event="keyup" execute="@this" listener="#{jobReqBean.refreshQualificationSuggestions}" render="escoQualSuggestions escoSelectedQuals" />
                     </h:inputText>
 
                     <h:panelGroup id="escoQualSuggestions">
                         <ui:fragment rendered="#{not empty jobReqBean.qualificationSuggestions}">
-                            <ul class="suggestions-list" style="background:white; border:1px solid #ddd; list-style:none; padding:0; margin-top:8px;">
+                            <ul class="suggestions-list" style="background:white; border:1px solid #ddd; list-style:none; padding:0; margin-top:8px; border-radius:8px;">
                                 <ui:repeat value="#{jobReqBean.qualificationSuggestions}" var="q">
-                                    <li style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
-                                        #{q['label']}
-                                        <h:commandLink value="Add" style="color:#2563eb; font-weight:bold;" action="#{jobReqBean.addQualification(q)}">
+                                    <li style="padding:10px 12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                                        <h:outputText value="#{q['label']}" />
+                                        <h:commandButton value="+ Add"
+                                                         actionListener="#{jobReqBean.addSelectedQualification}"
+                                                         immediate="true"
+                                                         style="background:#f59e0b; color:white; padding:4px 12px; font-size:12px; border:none; border-radius:4px; cursor:pointer;">
+                                            <f:setPropertyActionListener target="#{jobReqBean.selectedQualificationLabel}" value="#{q['label']}" />
                                             <f:ajax render="escoSelectedQuals" />
-                                        </h:commandLink>
+                                        </h:commandButton>
                                     </li>
                                 </ui:repeat>
                             </ul>

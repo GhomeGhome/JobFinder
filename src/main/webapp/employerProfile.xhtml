@@ -158,7 +158,7 @@
       </div>
 
       <div class="card" style="flex-grow: 1; min-width: 300px">
-        <h:form>
+        <h:form id="profileForm">
           <input
             type="hidden"
             name="hiddenAvatarUrl"
@@ -291,50 +291,46 @@
           <div class="field">
             <span class="field-label">Search by name</span>
             <h:inputText
-              value="#{companySearchQuery}"
+              value="#{companyBean.searchQuery}"
               styleClass="input-full"
               id="companySearchInput"
+              placeholder="Type company name..."
             >
-              <f:ajax event="keyup" render="companyResults" />
+              <f:ajax event="keyup" render="companyResults" execute="@this" />
             </h:inputText>
           </div>
 
           <h:panelGroup id="companyResults">
-            <ui:fragment
-              rendered="#{not empty companyBean.searchByName(companySearchQuery)}"
-            >
+            <ui:fragment rendered="#{not empty companyBean.searchResults}">
               <ul
                 class="suggestions-list"
-                style="
-                  background: white;
-                  border: 1px solid #ddd;
-                  list-style: none;
-                  padding: 0;
-                "
+                style="background: white; border: 1px solid #ddd; list-style: none; padding: 0; border-radius: 8px; margin-top: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
               >
-                <ui:repeat
-                  value="#{companyBean.searchByName(companySearchQuery)}"
-                  var="c"
-                >
-                  <li
-                    style="
-                      padding: 8px;
-                      border-bottom: 1px solid #eee;
-                      display: flex;
-                      justify-content: space-between;
-                    "
-                  >
-                    #{c.name} · #{c.location}
+                <ui:repeat value="#{companyBean.searchResults}" var="c">
+                  <li style="padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <span style="font-weight: 600; color: #1e293b;">#{c.name}</span>
+                      <span style="color: #6b7280; font-size: 13px;"> · #{c.location}</span>
+                    </div>
                     <h:commandLink
-                      value="Link"
+                      value="✓ Link"
                       action="#{companyBean.linkEmployerToCompany(c.id)}"
-                      style="color: #2563eb; font-weight: bold"
+                      style="background: #22c55e; color: white; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;"
                     >
-                      <f:ajax render="@form" />
+                      <f:ajax execute="@form" render="@form :profileForm" />
                     </h:commandLink>
                   </li>
                 </ui:repeat>
               </ul>
+            </ui:fragment>
+            
+            <!-- Show current linked company -->
+            <ui:fragment rendered="#{not empty loginBean.loggedCompany}">
+              <div style="margin-top: 16px; padding: 12px 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+                <p style="margin: 0; color: #166534; font-weight: 600;">
+                  ✓ Currently linked to: #{loginBean.loggedCompany.name}
+                </p>
+              </div>
             </ui:fragment>
           </h:panelGroup>
         </h:form>

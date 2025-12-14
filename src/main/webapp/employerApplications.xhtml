@@ -58,7 +58,7 @@
             <h:column>
                     <f:facet name="header">Job offer</f:facet>
                     <h:link outcome="/applicantJobDetails.xhtml"
-                            style="font-weight: bold; color: #2563eb; text-decoration: underline;">
+                            style="display: inline-block; font-weight: 600; color: #1e293b; text-decoration: none; padding: 6px 12px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 8px; border: 1px solid #e2e8f0; transition: all 0.2s ease; font-size: 13px;">
                         #{applicationBean.getJobTitle(a.jobOfferId)}
                         <f:param name="jobId" value="#{a.jobOfferId}" />
                     </h:link>
@@ -67,8 +67,9 @@
                 <h:column>
                     <f:facet name="header">Candidate</f:facet>
                     <h:link outcome="applicantProfileView.xhtml"
-                            value="#{applicationBean.getApplicantName(a.applicantId)}"
-                            style="font-weight: bold; color: #2563eb; text-decoration: underline;">
+                            style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: #1e293b; text-decoration: none; padding: 6px 12px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; transition: all 0.2s ease; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        <span style="width: 28px; height: 28px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700;">#{applicationBean.getApplicantName(a.applicantId).substring(0,1)}</span>
+                        #{applicationBean.getApplicantName(a.applicantId)}
                         <f:param name="id" value="#{a.applicantId}" />
                     </h:link>
                 </h:column>
@@ -118,27 +119,31 @@
                     <f:facet name="header">Action</f:facet>
 
                     <h:panelGroup rendered="#{applicationBean.selectedStatuses[a.id] eq 'Accepted'}">
-                        <span style="background-color:#dcfce7; color:#15803d; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-right: 8px;">
-                            Accepted
-                        </span>
-                        <h:link outcome="employerInterviews.xhtml"
-                                value="📅 Schedule Interview"
-                                styleClass="btn-small"
-                                style="background-color: #15803d; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">
-                            <f:param name="candidateName" value="#{applicationBean.getApplicantName(a.applicantId)}" />
-                            <f:param name="jobId" value="#{a.jobOfferId}" />
-                            <f:param name="applicantId" value="#{a.applicantId}" />
-                        </h:link>
+                        <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+                            <span style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);">
+                                ✓ Accepted
+                            </span>
+                            <h:link outcome="employerInterviews.xhtml"
+                                    styleClass="btn-small"
+                                    style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35); transition: all 0.2s ease;">
+                                <span style="font-size: 14px;">📅</span> Schedule
+                                <f:param name="candidateName" value="#{applicationBean.getApplicantName(a.applicantId)}" />
+                                <f:param name="jobId" value="#{a.jobOfferId}" />
+                                <f:param name="applicantId" value="#{a.applicantId}" />
+                            </h:link>
+                        </div>
                     </h:panelGroup>
 
                     <h:panelGroup rendered="#{applicationBean.selectedStatuses[a.id] eq 'Rejected'}">
-                        <span style="background-color:#fee2e2; color:#b91c1c; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">
-                            Declined
+                        <span style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);">
+                            ✗ Declined
                         </span>
                     </h:panelGroup>
 
                     <h:panelGroup rendered="#{applicationBean.selectedStatuses[a.id] == null or (applicationBean.selectedStatuses[a.id] ne 'Accepted' and applicationBean.selectedStatuses[a.id] ne 'Rejected')}">
-                        <span style="color: #9ca3af; font-size: 12px; font-style: italic;">No actions yet</span>
+                        <span style="background-color: #f3f4f6; color: #6b7280; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 500;">
+                            ⏳ Pending review
+                        </span>
                     </h:panelGroup>
                 </h:column>
 

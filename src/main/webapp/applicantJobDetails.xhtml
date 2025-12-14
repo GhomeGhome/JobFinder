@@ -39,25 +39,54 @@
                 <p>#{applicationViewBean.offer.description}</p>
 
                 <h3 style="margin-top: 24px;">Status</h3>
-                <span class="status-badge">#{applicationViewBean.offer.status}</span>
+                <!-- Status badges -->
+                <h:panelGroup rendered="#{applicationViewBean.offer.status eq 'Published'}">
+                    <span style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;">
+                        ● Open for Applications
+                    </span>
+                </h:panelGroup>
+                <h:panelGroup rendered="#{applicationViewBean.offer.status eq 'Draft'}">
+                    <span style="background: #f3f4f6; color: #6b7280; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;">
+                        ○ Draft - Not accepting applications
+                    </span>
+                </h:panelGroup>
+                <h:panelGroup rendered="#{applicationViewBean.offer.status eq 'Closed'}">
+                    <span style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;">
+                        ✗ Closed - No longer accepting applications
+                    </span>
+                </h:panelGroup>
 
-                <h:panelGroup rendered="#{not loginBean.employer}">
+                <!-- Apply button - ONLY for Published jobs and Applicants -->
+                <h:panelGroup rendered="#{not loginBean.employer and applicationViewBean.offer.status eq 'Published'}">
                     <div style="margin-top: 32px; display: flex; gap: 16px; align-items: center;">
                         <h:form>
-                            <h:commandButton value="Apply now"
+                            <h:commandButton value="✉️ Apply Now"
                                              action="#{applicationViewBean.apply}"
                                              styleClass="btn btn-primary"
+                                             style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; padding: 12px 24px; font-size: 14px;"
                                              disabled="#{applicationViewBean.alreadyApplied}" />
                             <h:messages styleClass="form-messages" />
                         </h:form>
 
                         <h:link outcome="/applicantJobs.xhtml"
-                                value="Back to job list"
+                                value="← Back to job list"
                                 styleClass="btn btn-light" />
                     </div>
                 </h:panelGroup>
 
-                <h:panelGroup rendered="#{applicationViewBean.alreadyApplied}">
+                <!-- Back button only for Draft/Closed jobs -->
+                <h:panelGroup rendered="#{not loginBean.employer and applicationViewBean.offer.status ne 'Published'}">
+                    <div style="margin-top: 32px;">
+                        <p style="color: #6b7280; font-style: italic; margin-bottom: 16px;">
+                            This job is not currently accepting applications.
+                        </p>
+                        <h:link outcome="/applicantJobs.xhtml"
+                                value="← Back to job list"
+                                styleClass="btn btn-light" />
+                    </div>
+                </h:panelGroup>
+
+                <h:panelGroup rendered="#{applicationViewBean.alreadyApplied and applicationViewBean.offer.status eq 'Published'}">
                     <p style="margin-top: 12px; color: #16a34a;">
                         ✅ You have already applied to this job.
                     </p>

@@ -21,14 +21,62 @@
         </h:panelGroup>
 
         <h:panelGroup rendered="#{not empty companyViewBean.company}">
-            <div class="page-header">
-                <h1>#{companyViewBean.company.name}</h1>
-                <p class="page-subtitle">#{companyViewBean.company.location}</p>
-            </div>
+            <button onclick="window.history.back();"
+                    class="btn"
+                    style="margin-bottom: 20px; display: inline-block; background-color: #6b7280; color: white; padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 14px;">
+                ⬅ Back
+            </button>
 
-            <div class="card">
-                <h3>About</h3>
-                <p>#{companyViewBean.company.description}</p>
+            <div class="card" style="display: flex; gap: 32px; align-items: start;">
+                <div style="text-align: center; min-width: 120px;">
+                    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
+                        <span style="font-size: 36px; color: white; font-weight: 700;">🏢</span>
+                    </div>
+                    <span style="background: #e0e7ff; color: #4338ca; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600;">Company</span>
+                </div>
+
+                <div style="flex-grow: 1;">
+                    <h2 style="margin-top: 0; font-size: 28px; color: #1e293b;">#{companyViewBean.company.name}</h2>
+                    
+                    <div style="display: flex; gap: 16px; margin-top: 8px; margin-bottom: 20px;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px; color: #6b7280; font-size: 14px;">
+                            📍 #{companyViewBean.company.location}
+                        </span>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+
+                    <h3 style="font-size: 16px; color: #374151; margin-bottom: 8px;">About the Company</h3>
+                    <p style="color: #4b5563; line-height: 1.6; margin: 0;">
+                        #{companyViewBean.company.description}
+                    </p>
+
+                    <!-- Contact Person Section -->
+                    <h:panelGroup rendered="#{not empty companyViewBean.ownerEmployer}">
+                        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+                        
+                        <h3 style="font-size: 16px; color: #374151; margin-bottom: 12px;">Contact Person</h3>
+                        
+                        <div style="display: flex; align-items: center; gap: 16px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: 700;">
+                                #{companyViewBean.ownerEmployer.firstName.substring(0,1)}#{companyViewBean.ownerEmployer.lastName.substring(0,1)}
+                            </div>
+                            <div>
+                                <p style="margin: 0; font-weight: 600; color: #1e293b; font-size: 16px;">
+                                    #{companyViewBean.ownerEmployer.firstName} #{companyViewBean.ownerEmployer.lastName}
+                                </p>
+                                <p style="margin: 4px 0 0 0; color: #6b7280; font-size: 14px;">
+                                    📧 #{companyViewBean.ownerEmployer.email}
+                                </p>
+                            </div>
+                            <h:link outcome="/employerProfileView.xhtml" 
+                                    style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; background: #1e293b; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">
+                                View Profile →
+                                <f:param name="id" value="#{companyViewBean.ownerEmployer.id}" />
+                            </h:link>
+                        </div>
+                    </h:panelGroup>
+                </div>
             </div>
         </h:panelGroup>
     </ui:define>

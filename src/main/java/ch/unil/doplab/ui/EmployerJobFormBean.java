@@ -8,7 +8,7 @@ import ch.unil.doplab.client.JobFinderClient;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
-import jakarta.faces.view.ViewScoped;
+import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Named("employerJobFormBean")
-@ViewScoped
+@SessionScoped
 public class EmployerJobFormBean implements Serializable {
 
     @Inject
@@ -35,9 +35,18 @@ public class EmployerJobFormBean implements Serializable {
 
     @PostConstruct
     public void init() {
+        resetForm();
+    }
+    
+    public void resetForm() {
+        // Reset form fields for a new job
+        jobOffer = new JobOffer();
+        selectedCompanyId = null;
+        statusString = "Draft";
+        requiredSkillInput = null;
+        
         // Ensure we are logged as employer
         if (!loginBean.isEmployer() || loginBean.getLoggedEmployer() == null) {
-            // If not, nothing to init (you might redirect in a real app)
             return;
         }
 

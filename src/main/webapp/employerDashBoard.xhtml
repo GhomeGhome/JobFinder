@@ -49,28 +49,44 @@
 
                         <h:column>
                             <f:facet name="header">Title</f:facet>
-                            #{offer.title}
+                            <span style="font-weight: 600; color: #1e293b; font-size: 14px;">
+                                #{offer.title}
+                            </span>
                         </h:column>
 
                         <h:column>
                             <f:facet name="header">Company</f:facet>
-                            #{jobOfferBean.companyName(offer)}
+                            <span style="display: inline-block; padding: 4px 10px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 6px; font-size: 12px; color: #475569; font-weight: 500; border: 1px solid #e2e8f0;">
+                                🏢 #{jobOfferBean.companyName(offer)}
+                            </span>
                         </h:column>
 
                         <h:column>
                             <f:facet name="header">Status</f:facet>
-                            <span class="status-badge">
-                        #{offer.status}
-                    </span>
+                            <h:panelGroup rendered="#{offer.status eq 'Published'}">
+                                <span style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    ● Published
+                                </span>
+                            </h:panelGroup>
+                            <h:panelGroup rendered="#{offer.status eq 'Draft'}">
+                                <span style="background: #f3f4f6; color: #6b7280; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    ○ Draft
+                                </span>
+                            </h:panelGroup>
+                            <h:panelGroup rendered="#{offer.status eq 'Closed'}">
+                                <span style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    ✗ Closed
+                                </span>
+                            </h:panelGroup>
                         </h:column>
 
                         <!-- Actions column from step 1 -->
                         <h:column>
                             <f:facet name="header">Actions</f:facet>
 
-                            <h:commandLink value="View applicants"
+                            <h:commandLink value="👥 View applicants"
                                            action="#{applicationBean.openApplicationsForJob(offer.id)}"
-                                           styleClass="link-action" />
+                                           style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35); border: none; cursor: pointer;" />
                         </h:column>
 
                     </h:dataTable>

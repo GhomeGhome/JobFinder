@@ -102,25 +102,25 @@ public class InterviewBean implements Serializable {
     public List<Applicant> getApplicantsForSelectedJob() {
         List<Applicant> result = new ArrayList<>();
 
-        java.util.LinkedHashSet<java.util.UUID> acceptedIds = new java.util.LinkedHashSet<>();
+        java.util.LinkedHashSet<java.util.UUID> eligibleIds = new java.util.LinkedHashSet<>();
+        
+        // Statuses that are eligible for scheduling interviews
+        java.util.Set<String> eligibleStatuses = java.util.Set.of("Submitted", "In_review", "Accepted");
 
-        // If no job is selected (e.g. opened from top nav), show all accepted
-        // applicants
-        // across all offers owned by the logged-in employer.
+        // If no job is selected, show all eligible applicants across all offers
         if (selectedJobOfferId == null || selectedJobOfferId.isBlank()) {
             for (JobOffer offer : getEmployerOffers()) {
                 if (offer == null || offer.getId() == null)
                     continue;
                 var apps = client.getApplicationsByOffer(offer.getId());
                 for (ch.unil.doplab.Application a : apps) {
-                    if (a.getStatus() != null && "Accepted".equals(a.getStatus().name())) {
-                        acceptedIds.add(a.getApplicantId());
+                    if (a.getStatus() != null && eligibleStatuses.contains(a.getStatus().name())) {
+                        eligibleIds.add(a.getApplicantId());
                     }
                 }
             }
         }
-
-        // If a job is selected, show accepted applicants for that specific job.
+        // If a job is selected, show eligible applicants for that specific job
         else {
             java.util.UUID jobId;
             try {
@@ -131,13 +131,13 @@ public class InterviewBean implements Serializable {
 
             var apps = client.getApplicationsByOffer(jobId);
             for (ch.unil.doplab.Application a : apps) {
-                if (a.getStatus() != null && "Accepted".equals(a.getStatus().name())) {
-                    acceptedIds.add(a.getApplicantId());
+                if (a.getStatus() != null && eligibleStatuses.contains(a.getStatus().name())) {
+                    eligibleIds.add(a.getApplicantId());
                 }
             }
         }
 
-        for (java.util.UUID aid : acceptedIds) {
+        for (java.util.UUID aid : eligibleIds) {
             Applicant a = client.getApplicant(aid);
             if (a != null)
                 result.add(a);
@@ -225,20 +225,21 @@ public class InterviewBean implements Serializable {
             return null;
         }
 
-        // Verify applicant is accepted for this job
+        // Verify applicant has applied to this job (any eligible status)
         java.util.UUID jobId = java.util.UUID.fromString(selectedJobOfferId);
         java.util.UUID appId = java.util.UUID.fromString(selectedApplicantId);
-        boolean accepted = false;
+        java.util.Set<String> eligibleStatuses = java.util.Set.of("Submitted", "In_review", "Accepted");
+        boolean eligible = false;
         for (ch.unil.doplab.Application a : client.getApplicationsByOffer(jobId)) {
-            if (appId.equals(a.getApplicantId()) && a.getStatus() != null && "Accepted".equals(a.getStatus().name())) {
-                accepted = true;
+            if (appId.equals(a.getApplicantId()) && a.getStatus() != null && eligibleStatuses.contains(a.getStatus().name())) {
+                eligible = true;
                 break;
             }
         }
-        if (!accepted) {
+        if (!eligible) {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Not allowed",
-                            "You can schedule only for Accepted applications."));
+                            "This applicant has not applied to this job or was rejected."));
             return null;
         }
 

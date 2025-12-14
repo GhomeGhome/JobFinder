@@ -78,7 +78,7 @@ public class ProfileViewBean implements Serializable {
     public boolean isValidUrl(String url) {
         return url != null
                 && !url.isBlank()
-                && (url.startsWith("http://") || url.startsWith("https://"));
+                && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/"));
     }
 
     // --- GETTERS & SETTERS ---

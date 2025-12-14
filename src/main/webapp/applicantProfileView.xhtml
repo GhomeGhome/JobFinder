@@ -46,24 +46,23 @@
                     <strong class="field-label">CV / Resume</strong>
 
                     <h:panelGroup rendered="#{not empty profileViewBean.targetApplicant.cvInfo}">
-                        <div style="margin-top:4px;">
+                        <div style="margin-top: 8px;">
                             <ui:fragment rendered="#{profileViewBean.isValidUrl(profileViewBean.targetApplicant.cvInfo)}">
                                 <a href="#{profileViewBean.targetApplicant.cvInfo}" target="_blank"
-                                   class="btn-link" style="text-decoration: underline; color: #2563eb;">
-                                    📄 View CV Document
+                                   style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); transition: all 0.2s;">
+                                    📄 Download CV (PDF)
                                 </a>
                             </ui:fragment>
                             <ui:fragment rendered="#{not profileViewBean.isValidUrl(profileViewBean.targetApplicant.cvInfo)}">
-                                <span style="color: #6b7280;">CV text provided</span>
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-top: 4px;">
+                                    <span style="color: #374151; font-size: 13px;">#{profileViewBean.targetApplicant.cvInfo}</span>
+                                </div>
                             </ui:fragment>
-                            <div style="font-size: 11px; color: #9ca3af; margin-top: 2px; overflow: hidden; text-overflow: ellipsis;">
-                                #{profileViewBean.targetApplicant.cvInfo}
-                            </div>
                         </div>
                     </h:panelGroup>
 
                     <h:panelGroup rendered="#{empty profileViewBean.targetApplicant.cvInfo}">
-                        <p style="color: #9ca3af; font-style: italic;">No CV uploaded yet.</p>
+                        <p style="color: #9ca3af; font-style: italic; margin-top: 8px;">No CV uploaded yet.</p>
                     </h:panelGroup>
                 </div>
 

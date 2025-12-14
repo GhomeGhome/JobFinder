@@ -59,10 +59,19 @@ public class UploadBean {
             if (a != null) {
                 a.setCvInfo(publicUrl);
                 client.updateApplicant(a);
+                
+                // Refresh the session with updated applicant data
+                var fresh = client.getApplicant(a.getId());
+                if (fresh != null) {
+                    loginBean.setLoggedApplicant(fresh);
+                }
             }
 
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "CV uploaded", "Your CV is now linked to your profile."));
+            
+            // Redirect to refresh the page and show the CV
+            return "applicantProfile?faces-redirect=true";
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Upload failed", "We could not upload your CV. Please try again."));

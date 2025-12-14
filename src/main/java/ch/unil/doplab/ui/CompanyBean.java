@@ -12,14 +12,23 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Named("companyBean")
-@RequestScoped
-public class CompanyBean {
+@jakarta.faces.view.ViewScoped
+public class CompanyBean implements java.io.Serializable {
 
     // @Inject private ApplicationState appState; // OLD
     @Inject
     private LoginBean loginBean;
     @Inject
     private JobFinderClient client; // NEW
+    
+    private String searchQuery = "";
+    
+    public String getSearchQuery() { return searchQuery; }
+    public void setSearchQuery(String searchQuery) { this.searchQuery = searchQuery; }
+    
+    public List<Company> getSearchResults() {
+        return searchByName(searchQuery);
+    }
 
     public List<Company> getAllCompanies() {
         return client.getAllCompanies();

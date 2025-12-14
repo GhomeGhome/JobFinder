@@ -40,30 +40,69 @@
 
                         <h:column>
                             <f:facet name="header">Title</f:facet>
-                            #{offer.title}
+                            <span style="font-weight: 600; color: #1e293b; font-size: 14px;">
+                                #{offer.title}
+                            </span>
                         </h:column>
 
                         <h:column>
                             <f:facet name="header">Company / Employer</f:facet>
-                            <h:link value="#{jobOfferBean.companyName(offer)}"
-                                    outcome="employerProfileView"
-                                    style="font-weight: bold; color: #2563eb; text-decoration: none;">
+                            <!-- Link to company details if job has a company -->
+                            <h:link outcome="/companyDetails.xhtml"
+                                    rendered="#{offer.companyId != null}"
+                                    style="display: inline-block; padding: 6px 12px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 8px; font-size: 13px; color: #1e293b; font-weight: 600; border: 1px solid #e2e8f0; text-decoration: none;">
+                                🏢 #{jobOfferBean.companyName(offer)}
+                                <f:param name="companyId" value="#{offer.companyId}" />
+                            </h:link>
+                            <!-- Fallback to employer profile if no company -->
+                            <h:link outcome="/employerProfileView.xhtml"
+                                    rendered="#{offer.companyId == null}"
+                                    style="display: inline-block; padding: 6px 12px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 8px; font-size: 13px; color: #1e293b; font-weight: 600; border: 1px solid #e2e8f0; text-decoration: none;">
+                                👤 #{jobOfferBean.companyName(offer)}
                                 <f:param name="id" value="#{offer.employerId}" />
                             </h:link>
                         </h:column>
 
                         <h:column>
                             <f:facet name="header">Status</f:facet>
-                            <span class="status-badge">
-                                #{offer.status}
-                            </span>
+                            <h:panelGroup rendered="#{offer.status eq 'Published'}">
+                                <span style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    ● Open
+                                </span>
+                            </h:panelGroup>
+                            <h:panelGroup rendered="#{offer.status eq 'Draft'}">
+                                <span style="background: #f3f4f6; color: #6b7280; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    ○ Draft
+                                </span>
+                            </h:panelGroup>
+                            <h:panelGroup rendered="#{offer.status eq 'Closed'}">
+                                <span style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    ✗ Closed
+                                </span>
+                            </h:panelGroup>
                         </h:column>
 
                         <h:column>
                             <f:facet name="header">Actions</f:facet>
+                            <!-- Published: Can apply -->
                             <h:link outcome="/applicantJobDetails.xhtml"
-                                    value="View / Apply"
-                                    styleClass="link-action">
+                                    rendered="#{offer.status eq 'Published'}"
+                                    style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);">
+                                ✉️ Apply Now
+                                <f:param name="jobId" value="#{offer.id}" />
+                            </h:link>
+                            <!-- Draft: View only -->
+                            <h:link outcome="/applicantJobDetails.xhtml"
+                                    rendered="#{offer.status eq 'Draft'}"
+                                    style="display: inline-flex; align-items: center; gap: 6px; background: #e5e7eb; color: #6b7280; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">
+                                👁️ Preview
+                                <f:param name="jobId" value="#{offer.id}" />
+                            </h:link>
+                            <!-- Closed: View only, greyed out -->
+                            <h:link outcome="/applicantJobDetails.xhtml"
+                                    rendered="#{offer.status eq 'Closed'}"
+                                    style="display: inline-flex; align-items: center; gap: 6px; background: #fee2e2; color: #991b1b; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">
+                                🚫 Closed
                                 <f:param name="jobId" value="#{offer.id}" />
                             </h:link>
                         </h:column>
@@ -88,25 +127,32 @@
 
                             <h:column>
                                 <f:facet name="header">Title</f:facet>
-                                #{r['title']}
+                                <span style="font-weight: 600; color: #1e293b; font-size: 14px;">
+                                    #{r['title']}
+                                </span>
                             </h:column>
 
                             <h:column>
                                 <f:facet name="header">Company</f:facet>
-                                #{r['company']}
+                                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border-radius: 8px; font-size: 13px; color: #374151; font-weight: 500; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+                                    <span style="font-size: 14px;">🏢</span> #{r['company']}
+                                </span>
                             </h:column>
 
                             <h:column>
                                 <f:facet name="header">Tags</f:facet>
-                                <ui:repeat value="#{r['tags']}" var="tag">
-                                    <span class="tag-bubble">#{tag}</span>
-                                </ui:repeat>
+                                <div style="display: flex; gap: 4px; flex-wrap: wrap; max-width: 280px;">
+                                    <ui:repeat value="#{r['tags']}" var="tag">
+                                        <span style="background: #f3f4f6; color: #4b5563; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; border: 1px solid #e5e7eb;">#{tag}</span>
+                                    </ui:repeat>
+                                </div>
                             </h:column>
 
                             <h:column>
                                 <f:facet name="header">Link</f:facet>
-                                <h:outputLink value="#{r['url']}" target="_blank" styleClass="link-action">
-                                    View job
+                                <h:outputLink value="#{r['url']}" target="_blank"
+                                              style="display: inline-flex; align-items: center; gap: 5px; background: #1e293b; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; transition: all 0.2s;">
+                                    Apply ↗
                                 </h:outputLink>
                             </h:column>
 
