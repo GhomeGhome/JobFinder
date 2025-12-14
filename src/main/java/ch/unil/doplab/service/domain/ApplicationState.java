@@ -265,6 +265,54 @@ public class ApplicationState {
         return iv;
     }
 
+    public Interview getInterview(UUID id) {
+        if (id == null)
+            return null;
+        Interview iv = interviews.get(id);
+        if (iv == null) {
+            iv = em.find(Interview.class, id);
+            if (iv != null)
+                interviews.put(id, iv);
+        }
+        return iv;
+    }
+
+    @Transactional
+    public Interview rescheduleInterview(UUID id, java.util.Date newDate, String newMode) {
+        if (id == null || newDate == null) {
+            throw new IllegalArgumentException("id and newDate are required");
+        }
+
+        Interview iv = em.find(Interview.class, id);
+        if (iv == null)
+            return null;
+
+        iv.setScheduledAt(newDate);
+        if (newMode != null && !newMode.isBlank()) {
+            try {
+                iv.setMode(InterviewMode.valueOf(newMode));
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        iv.setStatus(InterviewStatus.SCHEDULED); // Reset to scheduled
+        interviews.put(id, iv);
+        return iv;
+    }
+
+    @Transactional
+    public Interview updateInterviewDetails(UUID id, String locationOrLink) {
+        if (id == null)
+            return null;
+
+        Interview iv = em.find(Interview.class, id);
+        if (iv == null)
+            return null;
+
+        iv.setLocationOrLink(locationOrLink);
+        interviews.put(id, iv);
+        return iv;
+    }
+
     // ======================================================
     // GETTERS (RAM cache)
     // ======================================================
@@ -879,6 +927,63 @@ public class ApplicationState {
         return tokens;
     }
 
+    // Common synonyms/abbreviations for intelligent matching
+    private static final java.util.Map<String, java.util.Set<String>> SYNONYMS = new java.util.HashMap<>();
+    static {
+        // Programming languages
+        addSynonyms("javascript", "js", "ecmascript", "es6", "es2015");
+        addSynonyms("typescript", "ts");
+        addSynonyms("python", "py", "python3");
+        addSynonyms("java", "jdk", "jre", "j2ee", "jakarta");
+        addSynonyms("csharp", "c#", ".net", "dotnet");
+        addSynonyms("cplusplus", "c++", "cpp");
+        addSynonyms("golang", "go");
+        addSynonyms("ruby", "rails", "ruby on rails", "ror");
+        // Frameworks
+        addSynonyms("react", "reactjs", "react.js");
+        addSynonyms("angular", "angularjs", "angular.js");
+        addSynonyms("vue", "vuejs", "vue.js");
+        addSynonyms("node", "nodejs", "node.js");
+        addSynonyms("spring", "spring boot", "springboot");
+        addSynonyms("django", "python django");
+        addSynonyms("express", "expressjs", "express.js");
+        // Databases
+        addSynonyms("sql", "mysql", "postgresql", "postgres", "mssql", "oracle");
+        addSynonyms("nosql", "mongodb", "mongo", "cassandra", "dynamodb", "redis");
+        // Cloud/DevOps
+        addSynonyms("aws", "amazon web services", "ec2", "s3", "lambda");
+        addSynonyms("azure", "microsoft azure");
+        addSynonyms("gcp", "google cloud", "google cloud platform");
+        addSynonyms("docker", "containers", "containerization");
+        addSynonyms("kubernetes", "k8s");
+        addSynonyms("ci/cd", "cicd", "continuous integration", "jenkins", "github actions");
+        // General
+        addSynonyms("frontend", "front-end", "front end", "ui", "user interface");
+        addSynonyms("backend", "back-end", "back end", "server-side");
+        addSynonyms("fullstack", "full-stack", "full stack");
+        addSynonyms("api", "rest", "restful", "rest api", "graphql");
+        addSynonyms("agile", "scrum", "kanban");
+        addSynonyms("machine learning", "ml", "ai", "artificial intelligence", "deep learning");
+        addSynonyms("data science", "data analysis", "analytics", "data analyst");
+    }
+
+    private static void addSynonyms(String... terms) {
+        java.util.Set<String> group = new java.util.HashSet<>(java.util.Arrays.asList(terms));
+        for (String t : terms) {
+            SYNONYMS.computeIfAbsent(t.toLowerCase(), k -> new java.util.HashSet<>()).addAll(group);
+        }
+    }
+
+    private static boolean areSynonyms(String a, String b) {
+        String la = a.toLowerCase();
+        String lb = b.toLowerCase();
+        java.util.Set<String> synA = SYNONYMS.get(la);
+        if (synA != null && synA.contains(lb))
+            return true;
+        java.util.Set<String> synB = SYNONYMS.get(lb);
+        return synB != null && synB.contains(la);
+    }
+
     private static double phraseSimilarity(String a, String b) {
         if (a == null || b == null)
             return 0.0;
@@ -887,21 +992,72 @@ public class ApplicationState {
         if (sa.isEmpty() || sb.isEmpty())
             return 0.0;
 
+        // 1. Exact match
         if (sa.equals(sb))
-            return 1.0; // exact
-        if (sa.contains(sb) || sb.contains(sa))
-            return 0.7; // contains
+            return 1.0;
 
-        // token Jaccard overlap as soft similarity
+        // 2. Synonym match (high confidence)
+        if (areSynonyms(sa, sb))
+            return 0.95;
+
+        // 3. Contains match
+        if (sa.contains(sb) || sb.contains(sa))
+            return 0.75;
+
+        // 4. Check if any tokens are synonyms
         java.util.Set<String> ta = tokenize(sa);
         java.util.Set<String> tb = tokenize(sb);
         if (ta.isEmpty() || tb.isEmpty())
             return 0.0;
+
+        // Check for synonym overlap
+        double synonymBonus = 0.0;
+        for (String tokA : ta) {
+            for (String tokB : tb) {
+                if (areSynonyms(tokA, tokB)) {
+                    synonymBonus = Math.max(synonymBonus, 0.6);
+                }
+            }
+        }
+
+        // 5. Token Jaccard overlap as soft similarity
         java.util.Set<String> inter = new java.util.HashSet<>(ta);
         inter.retainAll(tb);
         java.util.Set<String> union = new java.util.HashSet<>(ta);
         union.addAll(tb);
-        return union.isEmpty() ? 0.0 : (inter.size() * 1.0) / union.size();
+        double jaccard = union.isEmpty() ? 0.0 : (inter.size() * 1.0) / union.size();
+
+        // 6. Levenshtein-based similarity for close matches (typos, plurals)
+        double levenshtein = 0.0;
+        if (Math.abs(sa.length() - sb.length()) <= 3) {
+            int dist = levenshteinDistance(sa, sb);
+            int maxLen = Math.max(sa.length(), sb.length());
+            if (maxLen > 0 && dist <= 3) {
+                levenshtein = 1.0 - ((double) dist / maxLen);
+                if (levenshtein > 0.7)
+                    levenshtein *= 0.6; // Scale down but still credit
+            }
+        }
+
+        return Math.max(Math.max(jaccard, synonymBonus), levenshtein);
+    }
+
+    private static int levenshteinDistance(String s1, String s2) {
+        int[] prev = new int[s2.length() + 1];
+        int[] curr = new int[s2.length() + 1];
+        for (int j = 0; j <= s2.length(); j++)
+            prev[j] = j;
+        for (int i = 1; i <= s1.length(); i++) {
+            curr[0] = i;
+            for (int j = 1; j <= s2.length(); j++) {
+                int cost = s1.charAt(i - 1) == s2.charAt(j - 1) ? 0 : 1;
+                curr[j] = Math.min(Math.min(curr[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
+            }
+            int[] tmp = prev;
+            prev = curr;
+            curr = tmp;
+        }
+        return prev[s2.length()];
     }
 
     private static double listSimilarity(java.util.Collection<String> requirements,

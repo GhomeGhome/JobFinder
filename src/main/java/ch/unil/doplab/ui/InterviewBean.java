@@ -28,6 +28,11 @@ public class InterviewBean implements Serializable {
     private String mode; // "ONLINE", "ONSITE", "PHONE"
     private String locationOrLink;
 
+    // === reschedule fields ===
+    private java.util.UUID rescheduleInterviewId;
+    private Date rescheduleDate;
+    private String rescheduleMode;
+
     // you already have these UI beans in your app
     @Inject
     private JobOfferBean jobOfferBean;
@@ -103,7 +108,7 @@ public class InterviewBean implements Serializable {
         List<Applicant> result = new ArrayList<>();
 
         java.util.LinkedHashSet<java.util.UUID> eligibleIds = new java.util.LinkedHashSet<>();
-        
+
         // Statuses that are eligible for scheduling interviews
         java.util.Set<String> eligibleStatuses = java.util.Set.of("Submitted", "In_review", "Accepted");
 
@@ -231,7 +236,8 @@ public class InterviewBean implements Serializable {
         java.util.Set<String> eligibleStatuses = java.util.Set.of("Submitted", "In_review", "Accepted");
         boolean eligible = false;
         for (ch.unil.doplab.Application a : client.getApplicationsByOffer(jobId)) {
-            if (appId.equals(a.getApplicantId()) && a.getStatus() != null && eligibleStatuses.contains(a.getStatus().name())) {
+            if (appId.equals(a.getApplicantId()) && a.getStatus() != null
+                    && eligibleStatuses.contains(a.getStatus().name())) {
                 eligible = true;
                 break;
             }
@@ -284,15 +290,69 @@ public class InterviewBean implements Serializable {
     }
 
     public String reschedule(java.util.UUID id) {
-        // For now: just mark as SCHEDULED again; you can implement a real reschedule
-        // flow later
+        // Start reschedule flow - store the interview ID and show form
         if (id != null) {
-            try {
-                client.updateInterviewStatus(id, InterviewStatus.SCHEDULED.name());
-            } catch (Exception ignored) {
+            this.rescheduleInterviewId = id;
+            // Pre-populate with current values
+            Interview iv = client.getInterview(id);
+            if (iv != null) {
+                this.rescheduleDate = iv.getScheduledAt();
+                this.rescheduleMode = iv.getMode() != null ? iv.getMode().name() : "ONLINE";
             }
         }
         return null;
+    }
+
+    public String confirmReschedule() {
+        if (rescheduleInterviewId == null || rescheduleDate == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Please select a new date", null));
+            return null;
+        }
+        try {
+            client.rescheduleInterview(rescheduleInterviewId, rescheduleDate, rescheduleMode);
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Interview rescheduled", null));
+            cancelReschedule(); // Clear form
+        } catch (Exception e) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Failed to reschedule: " + e.getMessage(), null));
+        }
+        return null;
+    }
+
+    public void cancelReschedule() {
+        this.rescheduleInterviewId = null;
+        this.rescheduleDate = null;
+        this.rescheduleMode = null;
+    }
+
+    public boolean isRescheduling() {
+        return rescheduleInterviewId != null;
+    }
+
+    public java.util.UUID getRescheduleInterviewId() {
+        return rescheduleInterviewId;
+    }
+
+    public void setRescheduleInterviewId(java.util.UUID id) {
+        this.rescheduleInterviewId = id;
+    }
+
+    public Date getRescheduleDate() {
+        return rescheduleDate;
+    }
+
+    public void setRescheduleDate(Date d) {
+        this.rescheduleDate = d;
+    }
+
+    public String getRescheduleMode() {
+        return rescheduleMode;
+    }
+
+    public void setRescheduleMode(String m) {
+        this.rescheduleMode = m;
     }
 
     public String cancel(java.util.UUID id) {

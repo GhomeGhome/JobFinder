@@ -24,9 +24,50 @@
             </p>
         </div>
 
-        <h:messages styleClass="form-messages" />
+        <h:messages styleClass="form-messages" 
+                   infoStyle="color: #15803d; background-color: #dcfce7; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0; display: block; margin-bottom: 12px;"
+                   errorStyle="color: #b91c1c; background-color: #fee2e2; padding: 10px; border-radius: 6px; border: 1px solid #fecaca; display: block; margin-bottom: 12px;" />
+
+        <!-- Reschedule form (shown when rescheduling) -->
+        <h:panelGroup rendered="#{interviewBean.rescheduling}">
+            <div class="card" style="margin-bottom: 16px; border: 2px solid #3b82f6;">
+                <h:form>
+                    <h3 style="margin-bottom: 16px; color: #1e40af;">Reschedule Interview</h3>
+                    
+                    <div class="field">
+                        <span class="field-label">New Date &amp; Time</span>
+                        <h:inputText value="#{interviewBean.rescheduleDate}"
+                                     styleClass="input-full"
+                                     pt:type="datetime-local">
+                            <f:convertDateTime pattern="yyyy-MM-dd'T'HH:mm" />
+                        </h:inputText>
+                    </div>
+                    
+                    <div class="field">
+                        <span class="field-label">Mode</span>
+                        <h:selectOneMenu value="#{interviewBean.rescheduleMode}"
+                                         styleClass="input-full">
+                            <f:selectItem itemValue="ONLINE" itemLabel="Online" />
+                            <f:selectItem itemValue="ONSITE" itemLabel="On-site" />
+                            <f:selectItem itemValue="PHONE" itemLabel="Phone" />
+                        </h:selectOneMenu>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px;">
+                        <h:commandButton value="Confirm Reschedule"
+                                         action="#{interviewBean.confirmReschedule}"
+                                         styleClass="btn btn-primary" />
+                        <h:commandButton value="Cancel"
+                                         action="#{interviewBean.cancelReschedule}"
+                                         styleClass="btn btn-light"
+                                         immediate="true" />
+                    </div>
+                </h:form>
+            </div>
+        </h:panelGroup>
 
         <!-- Schedule new interview card -->
+        <h:panelGroup rendered="#{not interviewBean.rescheduling}">
         <div class="card" style="margin-bottom: 16px;">
             <h:form>
 
@@ -65,14 +106,16 @@
                 <!-- Date & time -->
                 <div class="field">
                     <span class="field-label">Date &amp; time</span>
-                    <h:inputText value="#{interviewBean.scheduledAt}"
-                                 styleClass="input-full"
-                                 pt:type="date">
-                        <f:convertDateTime pattern="yyyy-MM-dd" />
-                    </h:inputText>
+                    <div style="display: flex; gap: 12px;">
+                        <h:inputText value="#{interviewBean.scheduledAt}"
+                                     styleClass="input-full"
+                                     pt:type="datetime-local">
+                            <f:convertDateTime pattern="yyyy-MM-dd'T'HH:mm" />
+                        </h:inputText>
+                    </div>
                 </div>
 
-                <!-- Mode (optional) -->
+                <!-- Mode -->
                 <div class="field">
                     <span class="field-label">Mode</span>
                     <h:selectOneMenu value="#{interviewBean.mode}"
@@ -83,12 +126,21 @@
                     </h:selectOneMenu>
                 </div>
 
+                <!-- Location / Link -->
+                <div class="field">
+                    <span class="field-label">Location / Meeting Link / Phone</span>
+                    <h:inputText value="#{interviewBean.locationOrLink}"
+                                 styleClass="input-full"
+                                 placeholder="e.g., https://zoom.us/j/... or Office: 123 Main St or +41 79 123 4567" />
+                </div>
+
                 <h:commandButton value="Schedule interview"
                                  action="#{interviewBean.schedule}"
                                  styleClass="btn btn-primary btn-full" />
 
             </h:form>
         </div>
+        </h:panelGroup>
 
         <!-- Existing interviews table -->
         <div class="card">
@@ -108,7 +160,9 @@
 
                 <h:column>
                     <f:facet name="header">Date &amp; time</f:facet>
-                    #{iv.scheduledAt}
+                    <h:outputText value="#{iv.scheduledAt}">
+                        <f:convertDateTime pattern="dd.MM.yyyy HH:mm" />
+                    </h:outputText>
                 </h:column>
 
                 <h:column>
@@ -138,11 +192,15 @@
                         <div style="display: flex; gap: 8px;">
                             <h:commandLink value="Reschedule"
                                            action="#{interviewBean.reschedule(iv.id)}"
-                                           styleClass="btn btn-light btn-sm" />
+                                           styleClass="btn btn-light btn-sm"
+                                           style="text-decoration:none;"
+                                           rendered="#{iv.status eq 'SCHEDULED'}" />
                             <h:commandLink value="Cancel"
                                            action="#{interviewBean.cancel(iv.id)}"
                                            styleClass="btn btn-light btn-sm"
-                                           style="background-color:#fee2e2; color:#b91c1c;" />
+                                           style="background-color:#fee2e2; color:#b91c1c; text-decoration:none;"
+                                           rendered="#{iv.status eq 'SCHEDULED'}" />
+                            <span rendered="#{iv.status ne 'SCHEDULED'}" style="color:#6b7280; font-size:12px;">—</span>
                         </div>
                     </h:form>
                 </h:column>

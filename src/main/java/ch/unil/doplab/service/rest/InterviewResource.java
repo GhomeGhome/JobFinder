@@ -64,6 +64,16 @@ public class InterviewResource {
         return state.createInterview(jobOfferId, applicantId, scheduledAt, req.mode, req.locationOrLink);
     }
 
+    @GET
+    @Path("/{id}")
+    public Interview getById(@PathParam("id") String idStr) {
+        UUID id = UUID.fromString(idStr);
+        Interview iv = state.getInterview(id);
+        if (iv == null)
+            throw new NotFoundException("Interview not found");
+        return iv;
+    }
+
     @POST
     @Path("/{id}/status/{status}")
     public Interview updateStatus(@PathParam("id") String idStr,
@@ -78,6 +88,42 @@ public class InterviewResource {
         }
 
         Interview updated = state.updateInterviewStatus(id, status);
+        if (updated == null)
+            throw new NotFoundException("Interview not found");
+        return updated;
+    }
+
+    public static class RescheduleRequest {
+        public Long scheduledAtMillis;
+        public String mode;
+    }
+
+    @POST
+    @Path("/{id}/reschedule")
+    public Interview reschedule(@PathParam("id") String idStr, RescheduleRequest req) {
+        UUID id = UUID.fromString(idStr);
+        if (req == null || req.scheduledAtMillis == null)
+            throw new BadRequestException("scheduledAtMillis is required");
+
+        Date newDate = new Date(req.scheduledAtMillis);
+        Interview updated = state.rescheduleInterview(id, newDate, req.mode);
+        if (updated == null)
+            throw new NotFoundException("Interview not found");
+        return updated;
+    }
+
+    public static class UpdateDetailsRequest {
+        public String locationOrLink;
+    }
+
+    @POST
+    @Path("/{id}/details")
+    public Interview updateDetails(@PathParam("id") String idStr, UpdateDetailsRequest req) {
+        UUID id = UUID.fromString(idStr);
+        if (req == null || req.locationOrLink == null)
+            throw new BadRequestException("locationOrLink is required");
+
+        Interview updated = state.updateInterviewDetails(id, req.locationOrLink);
         if (updated == null)
             throw new NotFoundException("Interview not found");
         return updated;

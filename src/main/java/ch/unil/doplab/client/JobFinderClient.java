@@ -280,6 +280,23 @@ public class JobFinderClient {
                 .post(Entity.json(""), Interview.class);
     }
 
+    public Interview getInterview(UUID interviewId) {
+        return client.target(BASE_URL + "/interviews/" + interviewId.toString())
+                .request(MediaType.APPLICATION_JSON)
+                .get(Interview.class);
+    }
+
+    public Interview rescheduleInterview(UUID interviewId, Date newDate, String newMode) {
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("scheduledAtMillis", newDate.getTime());
+        if (newMode != null)
+            body.put("mode", newMode);
+
+        return client.target(BASE_URL + "/interviews/" + interviewId.toString() + "/reschedule")
+                .request(MediaType.APPLICATION_JSON)
+                .post(Entity.json(body), Interview.class);
+    }
+
     public Applicant createApplicant(Applicant a) {
         Response response = null;
         try {
