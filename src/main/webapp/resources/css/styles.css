@@ -1,6 +1,18 @@
 /* src/main/webapp/resources/css/styles.css */
 
 /* ========== GLOBAL ========== */
+.tag-bubble {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 2px 6px 2px 0;
+    font-size: 12px;
+    line-height: 1;
+    color: #1f2937;
+    background-color: #e5e7eb;
+    border-radius: 9999px;
+    border: 1px solid #d1d5db;
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -336,6 +348,4 @@ body.page-bg {
     scrollbar-width: thin;
     scrollbar-color: #9ca3af #e5edff;
 }
-
-
 
