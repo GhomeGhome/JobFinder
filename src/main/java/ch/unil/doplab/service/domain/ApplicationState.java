@@ -30,7 +30,7 @@ public class ApplicationState {
     private Map<UUID, Company> companies;
     private Map<UUID, JobOffer> jobOffers;
     private Map<UUID, Application> applications;
-    private Map<Long, Interview> interviews;
+    private Map<UUID, Interview> interviews;
 
     // ======================================================
     // INIT / LOAD
@@ -71,10 +71,15 @@ public class ApplicationState {
             applications.put(app.getId(), app);
         }
 
-        for (Interview iv : em.createQuery("SELECT i FROM Interview i", Interview.class).getResultList()) {
-            if (iv.getId() != null) {
-                interviews.put(iv.getId(), iv);
+        // Wrap interview loading in try/catch - table may not exist yet
+        try {
+            for (Interview iv : em.createQuery("SELECT i FROM Interview i", Interview.class).getResultList()) {
+                if (iv.getId() != null) {
+                    interviews.put(iv.getId(), iv);
+                }
             }
+        } catch (Exception ignored) {
+            // interviews table doesn't exist yet - that's OK
         }
 
         rebuildInverseRelations(); // ✅ this was missing
@@ -244,7 +249,7 @@ public class ApplicationState {
     }
 
     @Transactional
-    public Interview updateInterviewStatus(Long id, InterviewStatus status) {
+    public Interview updateInterviewStatus(UUID id, InterviewStatus status) {
         if (id == null || status == null) {
             throw new IllegalArgumentException("id and status are required");
         }

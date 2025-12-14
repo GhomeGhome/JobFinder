@@ -1,10 +1,11 @@
 package ch.unil.doplab.ui;
 
 import java.util.Date;
+import java.util.UUID;
 
 public class InterviewDTO {
 
-    private Long id;
+    private UUID id;
     private String jobTitle;
     private String companyName;
     private String applicantName;
@@ -13,14 +14,14 @@ public class InterviewDTO {
     private String status;
     private String locationOrLink;
 
-    public InterviewDTO(Long id,
-                        String jobTitle,
-                        String companyName,
-                        String applicantName,
-                        Date scheduledAt,
-                        String mode,
-                        String status,
-                        String locationOrLink) {
+    public InterviewDTO(UUID id,
+            String jobTitle,
+            String companyName,
+            String applicantName,
+            Date scheduledAt,
+            String mode,
+            String status,
+            String locationOrLink) {
         this.id = id;
         this.jobTitle = jobTitle;
         this.companyName = companyName;
@@ -31,7 +32,7 @@ public class InterviewDTO {
         this.locationOrLink = locationOrLink;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 

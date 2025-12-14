@@ -9,8 +9,7 @@ import java.util.UUID;
 public class Interview {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto-increment Long
-    private Long id;
+    private UUID id;
 
     // Many interviews belong to one job offer
     @Column(name = "job_offer_id", nullable = false)
@@ -48,7 +47,7 @@ public class Interview {
     public Interview() {
     }
 
-    public Interview(Long id,
+    public Interview(UUID id,
             JobOffer jobOffer,
             Applicant applicant,
             Date scheduledAt,
@@ -66,11 +65,11 @@ public class Interview {
 
     // getters & setters
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

@@ -66,9 +66,10 @@ public class InterviewResource {
 
     @POST
     @Path("/{id}/status/{status}")
-    public Interview updateStatus(@PathParam("id") Long id,
+    public Interview updateStatus(@PathParam("id") String idStr,
             @PathParam("status") String statusRaw) {
 
+        UUID id = UUID.fromString(idStr);
         InterviewStatus status;
         try {
             status = InterviewStatus.valueOf(statusRaw);
