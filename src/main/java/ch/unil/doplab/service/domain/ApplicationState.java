@@ -13,12 +13,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Central in-memory state + DB persistence (StudyBuddy style):
- * - DB = persistent store
- * - Maps = runtime cache
- * - All logic stays here (resources stay thin)
- */
 @ApplicationScoped
 public class ApplicationState {
 
@@ -85,11 +79,6 @@ public class ApplicationState {
         rebuildInverseRelations(); // ✅ this was missing
     }
 
-    /**
-     * Rebuilds "inverse" lists in RAM only (jobOfferIds, applicationIds,
-     * employerIds, etc.)
-     * This mirrors what StudyBuddy did.
-     */
     private void rebuildInverseRelations() {
 
         for (Employer e : employers.values()) {
@@ -584,12 +573,9 @@ public class ApplicationState {
     }
 
     // ======================================================
-    // JOB OFFERS (DB + cache) -- IMPORTANT FIXES HERE
+    // JOB OFFERS (DB + cache)
     // ======================================================
 
-    /**
-     * List from cache (StudyBuddy style). Sort by createdAt if available.
-     */
     public List<JobOffer> listJobOffers(UUID employerId) {
         List<JobOffer> list = new ArrayList<>(jobOffers.values());
         if (employerId != null) {
@@ -1154,7 +1140,7 @@ public class ApplicationState {
     }
 
     // ======================================================
-    // DB admin endpoints (populate/clear/reset) - StudyBuddy style
+    // DB admin endpoints (populate/clear/reset)
     // ======================================================
 
     @Transactional
@@ -1191,8 +1177,79 @@ public class ApplicationState {
     // addEmployer/addCompany/addApplicant/createJobOffer/addApplication
     // ======================================================
 
+    private static final List<String> SKILL_POOL = List.of(
+            "java", "python", "sql", "javascript", "react", "css", "docker", "kubernetes", "linux",
+            "aws", "terraform", "ml", "statistics", "spring", "devops", "ui", "ux");
+
+    private void seed1000() {
+        Random rnd = new Random(42);
+
+        // 1) Companies first (we need their IDs for employers)
+        List<Company> companyList = new ArrayList<>();
+        for (int i = 1; i <= 1000; i++) {
+            Company c = new Company();
+            c.setName("Company " + i);
+            c.setLocation(i % 2 == 0 ? "Lausanne" : "Geneva");
+            c.setDescription("Seeded company #" + i);
+            c.setOwnerEmployerId(null); // set later if you want
+            addCompany(c);
+            companyList.add(c);
+        }
+
+        // 2) Employers (link to a company round-robin)
+        List<Employer> employerList = new ArrayList<>();
+        for (int i = 1; i <= 1000; i++) {
+            Company c = companyList.get((i - 1) % companyList.size());
+
+            Employer e = new Employer();
+            e.setFirstName("Employer" + i);
+            e.setLastName("Last" + i);
+            e.setEmail("employer" + i + "@example.com");
+            e.setUsername("employer" + i); // must be unique
+            e.setPassword("pass" + i);
+            e.setEnterpriseName(c.getName());
+            e.setCompanyId(c.getId());
+            addEmployer(e);
+            employerList.add(e);
+        }
+
+        // Optional: set ownerEmployerId now that employers exist
+        for (int i = 0; i < companyList.size(); i++) {
+            Company c = companyList.get(i);
+            Employer owner = employerList.get(i); // 1-to-1 mapping
+            c.setOwnerEmployerId(owner.getId());
+            // if you have setCompany(...) use it, otherwise em.merge(c) in a @Transactional
+            // method
+            em.merge(c);
+        }
+
+        // 3) Applicants
+        for (int i = 1; i <= 1000; i++) {
+            Applicant a = new Applicant();
+            a.setFirstName("Applicant" + i);
+            a.setLastName("Last" + i);
+            a.setEmail("applicant" + i + "@example.com");
+            a.setUsername("applicant" + i); // must be unique
+            a.setPassword("pass" + i);
+            a.setContactInfo("Contact " + i);
+            a.setDescriptionInfo("Seeded applicant #" + i);
+
+            List<String> skills = new ArrayList<>();
+            while (skills.size() < 3) {
+                String s = SKILL_POOL.get(rnd.nextInt(SKILL_POOL.size()));
+                if (!skills.contains(s))
+                    skills.add(s);
+            }
+            a.setSkills(skills);
+
+            addApplicant(a);
+        }
+    }
+
     private void populateApplicationState() {
         clearObjects();
+
+        seed1000();
 
         // ========= EMPLOYERS =========
         Employer alice = new Employer();
@@ -1815,7 +1872,7 @@ public class ApplicationState {
             managed.setLastName(incoming.getLastName());
         if (incoming.getEmail() != null && !incoming.getEmail().isBlank())
             managed.setEmail(incoming.getEmail());
-        
+
         // Update password if provided
         if (incoming.getPassword() != null && !incoming.getPassword().isBlank()) {
             managed.setPassword(incoming.getPassword());

@@ -19,7 +19,7 @@
         <properties>
             <!-- For dev: drop & recreate schema on each deployment -->
             <property name="jakarta.persistence.schema-generation.database.action"
-                      value="create"/>
+                      value="none"/>
             <property name="eclipselink.logging.level" value="FINEST"/>
         </properties>
     </persistence-unit>
