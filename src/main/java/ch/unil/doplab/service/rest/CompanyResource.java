@@ -28,7 +28,8 @@ public class CompanyResource {
     public Company get(@PathParam("id") String idStr) {
         UUID id = UUID.fromString(idStr);
         Company c = state.findCompany(id);
-        if (c == null) throw new NotFoundException("Company not found");
+        if (c == null)
+            throw new NotFoundException("Company not found");
         return c;
     }
 
@@ -56,7 +57,20 @@ public class CompanyResource {
         UUID id = UUID.fromString(idStr);
 
         Company result = state.updateCompany(id, updated);
-        if (result == null) throw new NotFoundException("Company not found");
+        if (result == null)
+            throw new NotFoundException("Company not found");
+
+        return result;
+    }
+
+    @POST
+    @Path("/{id}")
+    public Company updatePost(@PathParam("id") String idStr, Company updated) {
+        UUID id = UUID.fromString(idStr);
+
+        Company result = state.updateCompany(id, updated);
+        if (result == null)
+            throw new NotFoundException("Company not found");
 
         return result;
     }
@@ -67,7 +81,8 @@ public class CompanyResource {
         UUID id = UUID.fromString(idStr);
 
         boolean removed = state.deleteCompany(id);
-        if (!removed) throw new NotFoundException("Company not found");
+        if (!removed)
+            throw new NotFoundException("Company not found");
 
         return Response.noContent().build();
     }

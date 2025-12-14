@@ -30,6 +30,7 @@ public class ApplicationState {
     private Map<UUID, Company> companies;
     private Map<UUID, JobOffer> jobOffers;
     private Map<UUID, Application> applications;
+    private Map<Long, Interview> interviews;
 
     // ======================================================
     // INIT / LOAD
@@ -42,6 +43,7 @@ public class ApplicationState {
         companies = new HashMap<>();
         jobOffers = new HashMap<>();
         applications = new HashMap<>();
+        interviews = new HashMap<>();
 
         loadFromDatabase();
     }
@@ -67,6 +69,12 @@ public class ApplicationState {
         }
         for (Application app : em.createQuery("SELECT a FROM Application a", Application.class).getResultList()) {
             applications.put(app.getId(), app);
+        }
+
+        for (Interview iv : em.createQuery("SELECT i FROM Interview i", Interview.class).getResultList()) {
+            if (iv.getId() != null) {
+                interviews.put(iv.getId(), iv);
+            }
         }
 
         rebuildInverseRelations(); // ✅ this was missing
@@ -145,6 +153,110 @@ public class ApplicationState {
         companies.clear();
         jobOffers.clear();
         applications.clear();
+        interviews.clear();
+    }
+
+    // ======================================================
+    // INTERVIEWS (DB + cache)
+    // ======================================================
+
+    public List<Interview> listInterviews() {
+        return new ArrayList<>(interviews.values());
+    }
+
+    public List<Interview> listInterviewsByApplicantId(UUID applicantId) {
+        List<Interview> list = em.createQuery(
+                "SELECT i FROM Interview i WHERE i.applicantId = :applicantId", Interview.class)
+                .setParameter("applicantId", applicantId)
+                .getResultList();
+
+        for (Interview i : list) {
+            if (i.getId() != null) {
+                interviews.put(i.getId(), i);
+            }
+        }
+        return list;
+    }
+
+    public List<Interview> listInterviewsByEmployerId(UUID employerId) {
+        List<UUID> offerIds = em.createQuery(
+                "SELECT o.id FROM JobOffer o WHERE o.employerId = :employerId", UUID.class)
+                .setParameter("employerId", employerId)
+                .getResultList();
+
+        if (offerIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Interview> list = em.createQuery(
+                "SELECT i FROM Interview i WHERE i.jobOfferId IN :offerIds", Interview.class)
+                .setParameter("offerIds", offerIds)
+                .getResultList();
+
+        for (Interview i : list) {
+            if (i.getId() != null) {
+                interviews.put(i.getId(), i);
+            }
+        }
+        return list;
+    }
+
+    @Transactional
+    public Interview createInterview(UUID jobOfferId,
+            UUID applicantId,
+            java.util.Date scheduledAt,
+            String modeRaw,
+            String locationOrLink) {
+        if (jobOfferId == null || applicantId == null || scheduledAt == null) {
+            throw new IllegalArgumentException("jobOfferId, applicantId and scheduledAt are required");
+        }
+
+        // Validate references exist
+        JobOffer offer = em.find(JobOffer.class, jobOfferId);
+        if (offer == null) {
+            throw new IllegalArgumentException("Unknown JobOffer: " + jobOfferId);
+        }
+        Applicant applicant = em.find(Applicant.class, applicantId);
+        if (applicant == null) {
+            throw new IllegalArgumentException("Unknown Applicant: " + applicantId);
+        }
+
+        InterviewMode mode;
+        try {
+            mode = (modeRaw == null || modeRaw.isBlank()) ? InterviewMode.ONLINE : InterviewMode.valueOf(modeRaw);
+        } catch (IllegalArgumentException ex) {
+            mode = InterviewMode.ONLINE;
+        }
+
+        Interview iv = new Interview();
+        iv.setJobOfferId(jobOfferId);
+        iv.setApplicantId(applicantId);
+        iv.setScheduledAt(scheduledAt);
+        iv.setMode(mode);
+        iv.setStatus(InterviewStatus.SCHEDULED);
+        iv.setLocationOrLink(locationOrLink);
+
+        em.persist(iv);
+        if (iv.getId() != null) {
+            interviews.put(iv.getId(), iv);
+        }
+        return iv;
+    }
+
+    @Transactional
+    public Interview updateInterviewStatus(Long id, InterviewStatus status) {
+        if (id == null || status == null) {
+            throw new IllegalArgumentException("id and status are required");
+        }
+
+        Interview iv = em.find(Interview.class, id);
+        if (iv == null) {
+            return null;
+        }
+
+        iv.setStatus(status);
+        interviews.put(id, iv);
+        return iv;
     }
 
     // ======================================================
@@ -888,11 +1000,15 @@ public class ApplicationState {
         clearObjects();
 
         // children -> parents
+        try {
+            em.createQuery("DELETE FROM Interview").executeUpdate();
+        } catch (Exception ignored) {
+        }
         em.createQuery("DELETE FROM Application").executeUpdate();
         em.createQuery("DELETE FROM JobOffer").executeUpdate();
-        em.createQuery("DELETE FROM Company").executeUpdate();
-        em.createQuery("DELETE FROM Applicant").executeUpdate();
         em.createQuery("DELETE FROM Employer").executeUpdate();
+        em.createQuery("DELETE FROM Applicant").executeUpdate();
+        em.createQuery("DELETE FROM Company").executeUpdate();
     }
 
     @Transactional

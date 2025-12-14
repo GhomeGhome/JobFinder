@@ -2,7 +2,6 @@ package ch.unil.doplab.ui;
 
 import ch.unil.doplab.Applicant;
 import ch.unil.doplab.Interview;
-import ch.unil.doplab.InterviewMode;
 import ch.unil.doplab.InterviewStatus;
 import ch.unil.doplab.JobOffer;
 
@@ -21,10 +20,6 @@ import jakarta.faces.context.FacesContext;
 @Named
 @SessionScoped
 public class InterviewBean implements Serializable {
-
-    // in-memory "repository" for all interviews (simple for now)
-    private static final List<Interview> INTERVIEWS = new ArrayList<>();
-    private static long NEXT_ID = 1L;
 
     // === form fields ===
     private String selectedJobOfferId;
@@ -157,9 +152,33 @@ public class InterviewBean implements Serializable {
     public List<InterviewDTO> getEmployerInterviews() {
         List<InterviewDTO> result = new ArrayList<>();
 
-        for (Interview interview : INTERVIEWS) {
-            JobOffer job = interview.getJobOffer();
-            Applicant app = interview.getApplicant();
+        if (!loginBean.isEmployer() || loginBean.getLoggedEmployer() == null) {
+            return result;
+        }
+
+        java.util.UUID employerId = loginBean.getLoggedEmployer().getId();
+        if (employerId == null) {
+            return result;
+        }
+
+        List<Interview> interviews = client.getInterviewsByEmployer(employerId);
+
+        java.util.Map<java.util.UUID, JobOffer> offerCache = new java.util.HashMap<>();
+        java.util.Map<java.util.UUID, Applicant> applicantCache = new java.util.HashMap<>();
+
+        for (Interview interview : interviews) {
+            java.util.UUID jobId = interview.getJobOfferId();
+            java.util.UUID applicantId = interview.getApplicantId();
+
+            JobOffer job = null;
+            if (jobId != null) {
+                job = offerCache.computeIfAbsent(jobId, client::getJobOffer);
+            }
+
+            Applicant app = null;
+            if (applicantId != null) {
+                app = applicantCache.computeIfAbsent(applicantId, client::getApplicant);
+            }
 
             String jobTitle = (job != null) ? job.getTitle() : "";
             String companyName = (job != null) ? jobOfferBean.companyName(job) : "";
@@ -223,25 +242,22 @@ public class InterviewBean implements Serializable {
             return null;
         }
 
-        Interview interview = new Interview();
-        interview.setId(NEXT_ID++);
-        interview.setJobOffer(selectedJob);
-        interview.setApplicant(selectedApplicant);
-        interview.setScheduledAt(scheduledAt);
-
-        InterviewMode interviewMode;
+        Interview created;
         try {
-            interviewMode = InterviewMode.valueOf(
-                    (mode != null) ? mode : "ONLINE");
-        } catch (IllegalArgumentException ex) {
-            interviewMode = InterviewMode.ONLINE;
+            created = client.createInterview(jobId, appId, scheduledAt, mode, locationOrLink);
+        } catch (Exception ex) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error",
+                            "Could not persist interview."));
+            return null;
         }
-        interview.setMode(interviewMode);
 
-        interview.setStatus(InterviewStatus.SCHEDULED);
-        interview.setLocationOrLink(locationOrLink);
-
-        INTERVIEWS.add(interview);
+        if (created == null || created.getId() == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error",
+                            "Could not persist interview."));
+            return null;
+        }
 
         // success message
         FacesContext.getCurrentInstance().addMessage(null,
@@ -269,27 +285,20 @@ public class InterviewBean implements Serializable {
     public String reschedule(Long id) {
         // For now: just mark as SCHEDULED again; you can implement a real reschedule
         // flow later
-        Interview interview = findInterviewById(id);
-        if (interview != null) {
-            interview.setStatus(InterviewStatus.SCHEDULED);
+        if (id != null) {
+            try {
+                client.updateInterviewStatus(id, InterviewStatus.SCHEDULED.name());
+            } catch (Exception ignored) {
+            }
         }
         return null;
     }
 
     public String cancel(Long id) {
-        Interview interview = findInterviewById(id);
-        if (interview != null) {
-            interview.setStatus(InterviewStatus.CANCELED);
-        }
-        return null;
-    }
-
-    // ===== Helpers =====
-
-    private Interview findInterviewById(Long id) {
-        for (Interview iv : INTERVIEWS) {
-            if (iv.getId().equals(id)) {
-                return iv;
+        if (id != null) {
+            try {
+                client.updateInterviewStatus(id, InterviewStatus.CANCELED.name());
+            } catch (Exception ignored) {
             }
         }
         return null;
@@ -332,32 +341,36 @@ public class InterviewBean implements Serializable {
         // Assuming your Applicant entity uses UUID or Long.
         // Based on your InterviewBean, it seems we match objects directly or by ID.
         // Let's use the ID for safety.
-        Object myId = loginBean.getLoggedApplicant().getId();
 
-        for (Interview interview : INTERVIEWS) {
-            // Check if this interview belongs to the current applicant
-            if (interview.getApplicant() != null &&
-                    interview.getApplicant().getId().equals(myId)) {
+        java.util.UUID myId = loginBean.getLoggedApplicant().getId();
+        if (myId == null) {
+            return result;
+        }
 
-                JobOffer job = interview.getJobOffer();
+        List<Interview> interviews = client.getInterviewsByApplicant(myId);
+        java.util.Map<java.util.UUID, JobOffer> offerCache = new java.util.HashMap<>();
 
-                String jobTitle = (job != null) ? job.getTitle() : "";
-                String companyName = (job != null) ? jobOfferBean.companyName(job) : "";
-                // Applicant doesn't need to see their own name, they want Company name
-
-                String modeLabel = (interview.getMode() != null) ? interview.getMode().name() : "";
-                String statusLabel = (interview.getStatus() != null) ? interview.getStatus().name() : "";
-
-                result.add(new InterviewDTO(
-                        interview.getId(),
-                        jobTitle,
-                        companyName,
-                        "", // Applicant name not needed for their own view
-                        interview.getScheduledAt(),
-                        modeLabel,
-                        statusLabel,
-                        interview.getLocationOrLink()));
+        for (Interview interview : interviews) {
+            java.util.UUID jobId = interview.getJobOfferId();
+            JobOffer job = null;
+            if (jobId != null) {
+                job = offerCache.computeIfAbsent(jobId, client::getJobOffer);
             }
+
+            String jobTitle = (job != null) ? job.getTitle() : "";
+            String companyName = (job != null) ? jobOfferBean.companyName(job) : "";
+            String modeLabel = (interview.getMode() != null) ? interview.getMode().name() : "";
+            String statusLabel = (interview.getStatus() != null) ? interview.getStatus().name() : "";
+
+            result.add(new InterviewDTO(
+                    interview.getId(),
+                    jobTitle,
+                    companyName,
+                    "", // Applicant name not needed for their own view
+                    interview.getScheduledAt(),
+                    modeLabel,
+                    statusLabel,
+                    interview.getLocationOrLink()));
         }
         return result;
     }

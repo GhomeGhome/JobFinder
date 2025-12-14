@@ -28,7 +28,8 @@ public class EmployerResource {
     public Employer get(@PathParam("id") String idStr) {
         UUID id = UUID.fromString(idStr);
         Employer e = state.findEmployer(id);
-        if (e == null) throw new NotFoundException("Employer not found");
+        if (e == null)
+            throw new NotFoundException("Employer not found");
         return e;
     }
 
@@ -49,7 +50,20 @@ public class EmployerResource {
         UUID id = UUID.fromString(idStr);
 
         Employer result = state.updateEmployer(id, updated);
-        if (result == null) throw new NotFoundException("Employer not found");
+        if (result == null)
+            throw new NotFoundException("Employer not found");
+
+        return result;
+    }
+
+    @POST
+    @Path("/{id}")
+    public Employer updatePost(@PathParam("id") String idStr, Employer updated) {
+        UUID id = UUID.fromString(idStr);
+
+        Employer result = state.updateEmployer(id, updated);
+        if (result == null)
+            throw new NotFoundException("Employer not found");
 
         return result;
     }
@@ -60,7 +74,8 @@ public class EmployerResource {
         UUID id = UUID.fromString(idStr);
 
         boolean removed = state.deleteEmployer(id);
-        if (!removed) throw new NotFoundException("Employer not found");
+        if (!removed)
+            throw new NotFoundException("Employer not found");
 
         return Response.noContent().build();
     }

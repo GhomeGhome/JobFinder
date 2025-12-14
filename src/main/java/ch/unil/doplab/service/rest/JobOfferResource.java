@@ -42,7 +42,8 @@ public class JobOfferResource {
     public JobOffer get(@PathParam("id") String idStr) {
         UUID id = UUID.fromString(idStr);
         JobOffer o = state.findJobOffer(id);
-        if (o == null) throw new NotFoundException("JobOffer not found");
+        if (o == null)
+            throw new NotFoundException("JobOffer not found");
         return o;
     }
 
@@ -66,7 +67,18 @@ public class JobOfferResource {
     public JobOffer update(@PathParam("id") String idStr, JobOffer offer) {
         UUID id = UUID.fromString(idStr);
         JobOffer updated = state.updateJobOffer(id, offer);
-        if (updated == null) throw new NotFoundException("JobOffer not found");
+        if (updated == null)
+            throw new NotFoundException("JobOffer not found");
+        return updated;
+    }
+
+    @POST
+    @Path("/{id}")
+    public JobOffer updatePost(@PathParam("id") String idStr, JobOffer offer) {
+        UUID id = UUID.fromString(idStr);
+        JobOffer updated = state.updateJobOffer(id, offer);
+        if (updated == null)
+            throw new NotFoundException("JobOffer not found");
         return updated;
     }
 
@@ -76,7 +88,8 @@ public class JobOfferResource {
     public Response remove(@PathParam("id") String idStr) {
         UUID id = UUID.fromString(idStr);
         boolean removed = state.deleteJobOffer(id);
-        if (!removed) throw new NotFoundException("JobOffer not found");
+        if (!removed)
+            throw new NotFoundException("JobOffer not found");
 
         return Response.noContent().build();
     }
@@ -85,7 +98,7 @@ public class JobOfferResource {
     @POST
     @Path("/{id}/publish/{employerId}")
     public JobOffer publish(@PathParam("id") String offerIdStr,
-                            @PathParam("employerId") String employerIdStr) {
+            @PathParam("employerId") String employerIdStr) {
 
         UUID offerId = UUID.fromString(offerIdStr);
         UUID employerId = UUID.fromString(employerIdStr);

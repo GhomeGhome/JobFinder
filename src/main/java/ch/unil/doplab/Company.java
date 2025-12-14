@@ -18,7 +18,7 @@ public class Company {
 
     @Id
     private UUID id;
-    private UUID ownerEmployerId;     // Le fondateur ou administrateur principal
+    private UUID ownerEmployerId; // Le fondateur ou administrateur principal
 
     @Column(nullable = false)
     private String name;
@@ -38,19 +38,19 @@ public class Company {
     // For now we **do not persist** these lists – we can always add proper
     // relations later if needed. They are only used in memory.
     @Transient
-    private List<UUID> employerIds = new ArrayList<>();   // Tous les employeurs liés
+    private List<UUID> employerIds = new ArrayList<>(); // Tous les employeurs liés
     @Transient
-    private List<UUID> jobOfferIds = new ArrayList<>();   // Toutes les offres publiées
-
+    private List<UUID> jobOfferIds = new ArrayList<>(); // Toutes les offres publiées
 
     // ======================================================
     // CONSTRUCTEURS
     // ======================================================
 
-    public Company() {}
+    public Company() {
+    }
 
     public Company(UUID id, UUID ownerEmployerId, String name,
-                   String location, String description) {
+            String location, String description) {
 
         this.id = id;
         this.ownerEmployerId = ownerEmployerId;
@@ -60,7 +60,7 @@ public class Company {
     }
 
     public Company(UUID ownerEmployerId, String name,
-                   String location, String description) {
+            String location, String description) {
 
         this(null, ownerEmployerId, name, location, description);
     }
@@ -77,30 +77,63 @@ public class Company {
     // GETTERS / SETTERS
     // ======================================================
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public UUID getId() {
+        return id;
+    }
 
-    public UUID getOwnerEmployerId() { return ownerEmployerId; }
-    public void setOwnerEmployerId(UUID id) { this.ownerEmployerId = id; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public UUID getOwnerEmployerId() {
+        return ownerEmployerId;
+    }
 
-    public String getLocation() { return location; }
-    public void setLocation(String location) { this.location = location; }
+    public void setOwnerEmployerId(UUID id) {
+        this.ownerEmployerId = id;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public String getName() {
+        return name;
+    }
 
-    public java.util.List<JobOffer> getJobOffersRel() { return jobOffers; }
-    public java.util.List<Employer> getEmployersRel() { return employers; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @jakarta.json.bind.annotation.JsonbTransient
+    public java.util.List<JobOffer> getJobOffersRel() {
+        return jobOffers;
+    }
+
+    @jakarta.json.bind.annotation.JsonbTransient
+    public java.util.List<Employer> getEmployersRel() {
+        return employers;
+    }
 
     // ======================================================
     // RELATIONS EMPLOYERS (ONLY IN MEMORY FOR NOW)
     // ======================================================
 
-    public List<UUID> getEmployerIds() { return employerIds; }
+    public List<UUID> getEmployerIds() {
+        return employerIds;
+    }
 
     public void addEmployerId(UUID id) {
         if (id != null && !employerIds.contains(id))
@@ -111,12 +144,13 @@ public class Company {
         employerIds.remove(id);
     }
 
-
     // ======================================================
     // RELATIONS JOB OFFERS (IN MEMORY FOR NOW ONLY)
     // ======================================================
 
-    public List<UUID> getJobOfferIds() { return jobOfferIds; }
+    public List<UUID> getJobOfferIds() {
+        return jobOfferIds;
+    }
 
     public void addJobOfferId(UUID id) {
         if (id != null && !jobOfferIds.contains(id))
@@ -126,7 +160,6 @@ public class Company {
     public void removeJobOfferId(UUID id) {
         jobOfferIds.remove(id);
     }
-
 
     // ======================================================
     // OVERRIDE

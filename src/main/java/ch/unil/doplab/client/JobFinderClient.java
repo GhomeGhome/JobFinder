@@ -5,6 +5,7 @@ import ch.unil.doplab.Company;
 import ch.unil.doplab.JobOffer;
 import ch.unil.doplab.Application;
 import ch.unil.doplab.Applicant;
+import ch.unil.doplab.Interview;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -18,6 +19,7 @@ import jakarta.ws.rs.client.Entity;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Date;
 
 @ApplicationScoped
 public class JobFinderClient {
@@ -236,6 +238,47 @@ public class JobFinderClient {
                 });
     }
 
+    // ==========================================
+    // INTERVIEWS
+    // ==========================================
+
+    public List<Interview> getInterviewsByEmployer(UUID employerId) {
+        return client.target(BASE_URL + "/interviews/by-employer/" + employerId)
+                .request(MediaType.APPLICATION_JSON)
+                .get(new GenericType<List<Interview>>() {
+                });
+    }
+
+    public List<Interview> getInterviewsByApplicant(UUID applicantId) {
+        return client.target(BASE_URL + "/interviews/by-applicant/" + applicantId)
+                .request(MediaType.APPLICATION_JSON)
+                .get(new GenericType<List<Interview>>() {
+                });
+    }
+
+    public Interview createInterview(UUID jobOfferId,
+            UUID applicantId,
+            Date scheduledAt,
+            String mode,
+            String locationOrLink) {
+        Map<String, Object> body = Map.of(
+                "jobOfferId", jobOfferId.toString(),
+                "applicantId", applicantId.toString(),
+                "scheduledAtMillis", scheduledAt.getTime(),
+                "mode", mode,
+                "locationOrLink", locationOrLink);
+
+        return client.target(BASE_URL + "/interviews")
+                .request(MediaType.APPLICATION_JSON)
+                .post(Entity.json(body), Interview.class);
+    }
+
+    public Interview updateInterviewStatus(Long interviewId, String status) {
+        return client.target(BASE_URL + "/interviews/" + interviewId + "/status/" + status)
+                .request(MediaType.APPLICATION_JSON)
+                .post(Entity.json(""), Interview.class);
+    }
+
     public Applicant createApplicant(Applicant a) {
         Response response = null;
         try {
@@ -269,50 +312,56 @@ public class JobFinderClient {
     }
 
     public boolean updateApplicant(Applicant app) {
+        Response response = null;
         try {
-            Response response = target.path("applicants")
+            response = target.path("applicants")
                     .path(app.getId().toString())
                     .request(MediaType.APPLICATION_JSON)
-                    .put(Entity.json(app));
-
+                    .post(Entity.json(app));
             int status = response.getStatus();
-            response.close();
             return status >= 200 && status < 300;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        } finally {
+            if (response != null)
+                response.close();
         }
     }
 
     public boolean updateEmployer(Employer emp) {
+        Response response = null;
         try {
-            Response response = target.path("employers")
+            response = target.path("employers")
                     .path(emp.getId().toString())
                     .request(MediaType.APPLICATION_JSON)
-                    .put(Entity.json(emp));
-
+                    .post(Entity.json(emp));
             int status = response.getStatus();
-            response.close();
             return status >= 200 && status < 300;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        } finally {
+            if (response != null)
+                response.close();
         }
     }
 
     public boolean updateCompany(Company company) {
+        Response response = null;
         try {
-            Response response = target.path("companies")
+            response = target.path("companies")
                     .path(company.getId().toString())
                     .request(MediaType.APPLICATION_JSON)
-                    .put(Entity.json(company));
-
+                    .post(Entity.json(company));
             int status = response.getStatus();
-            response.close();
             return status >= 200 && status < 300;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        } finally {
+            if (response != null)
+                response.close();
         }
     }
 

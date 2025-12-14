@@ -6,7 +6,7 @@
 
     <persistence-unit name="jobfinderPU" transaction-type="JTA">
         <!-- This datasource must exist in Payara -->
-        <jta-data-source>jdbc/__default</jta-data-source>
+        <jta-data-source>jdbc/JobFinder</jta-data-source>
 
         <!-- All your entities -->
         <class>ch.unil.doplab.Company</class>
@@ -19,8 +19,8 @@
         <properties>
             <!-- For dev: drop & recreate schema on each deployment -->
             <property name="jakarta.persistence.schema-generation.database.action"
-                      value="drop-and-create"/>
-            <property name="eclipselink.logging.level" value="FINE"/>
+                      value="create"/>
+            <property name="eclipselink.logging.level" value="FINEST"/>
         </properties>
     </persistence-unit>
 

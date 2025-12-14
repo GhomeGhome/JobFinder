@@ -28,7 +28,8 @@ public class ApplicantResource {
     public Applicant getById(@PathParam("id") String idStr) {
         UUID id = UUID.fromString(idStr);
         Applicant a = state.findApplicant(id);
-        if (a == null) throw new NotFoundException("Applicant not found");
+        if (a == null)
+            throw new NotFoundException("Applicant not found");
         return a;
     }
 
@@ -48,7 +49,18 @@ public class ApplicantResource {
     public Applicant updateApplicant(@PathParam("id") String idStr, Applicant updated) {
         UUID id = UUID.fromString(idStr);
         Applicant result = state.updateApplicantProfile(id, updated);
-        if (result == null) throw new NotFoundException("Applicant not found");
+        if (result == null)
+            throw new NotFoundException("Applicant not found");
+        return result;
+    }
+
+    @POST
+    @Path("/{id}")
+    public Applicant updateApplicantPost(@PathParam("id") String idStr, Applicant updated) {
+        UUID id = UUID.fromString(idStr);
+        Applicant result = state.updateApplicantProfile(id, updated);
+        if (result == null)
+            throw new NotFoundException("Applicant not found");
         return result;
     }
 
@@ -58,7 +70,8 @@ public class ApplicantResource {
         UUID id = UUID.fromString(idStr);
 
         boolean ok = state.deleteApplicant(id);
-        if (!ok) throw new NotFoundException("Applicant not found");
+        if (!ok)
+            throw new NotFoundException("Applicant not found");
 
         return Response.noContent().build();
     }

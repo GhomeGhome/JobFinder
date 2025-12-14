@@ -9,7 +9,7 @@ import jakarta.persistence.*;
  * Représente une candidature à une offre d'emploi.
  */
 @Entity
-@Table(name="applications")
+@Table(name = "applications")
 public class Application {
 
     // ======================================================
@@ -28,35 +28,37 @@ public class Application {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_offer_id", insertable = false, updatable = false)
+    @jakarta.json.bind.annotation.JsonbTransient
     private JobOffer jobOffer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "applicant_id", insertable = false, updatable = false)
+    @jakarta.json.bind.annotation.JsonbTransient
     private Applicant applicant;
 
-    private String cvUrl;                  // lien ou contenu du CV
+    private String cvUrl; // lien ou contenu du CV
 
     @Column(name = "submitted_at")
-    private LocalDateTime submittedAt;     // date de création
+    private LocalDateTime submittedAt; // date de création
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;       // dernière modification
+    private LocalDateTime updatedAt; // dernière modification
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;       // première création (audit)
+    private LocalDateTime createdAt; // première création (audit)
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
-    private ApplicationStatus status;      // Submitted → In_review → Rejected/Accepted/Withdrawn
+    private ApplicationStatus status; // Submitted → In_review → Rejected/Accepted/Withdrawn
 
-    private Double matchScore;             // score éventuel pour le matching
-
+    private Double matchScore; // score éventuel pour le matching
 
     // ======================================================
     // CONSTRUCTEURS
     // ======================================================
 
-    public Application() {}
+    public Application() {
+    }
 
     public Application(UUID id, UUID jobOfferId, UUID applicantId) {
         this.id = id;
@@ -70,13 +72,13 @@ public class Application {
     }
 
     public Application(UUID id,
-                       UUID jobOfferId,
-                       UUID applicantId,
-                       String cvUrl,
-                       LocalDateTime submittedAt,
-                       LocalDateTime updatedAt,
-                       ApplicationStatus status,
-                       Double matchScore) {
+            UUID jobOfferId,
+            UUID applicantId,
+            String cvUrl,
+            LocalDateTime submittedAt,
+            LocalDateTime updatedAt,
+            ApplicationStatus status,
+            Double matchScore) {
 
         this.id = id;
         this.jobOfferId = jobOfferId;
@@ -119,44 +121,97 @@ public class Application {
         this.updatedAt = LocalDateTime.now();
     }
 
-
     // ======================================================
     // GETTERS / SETTERS
     // ======================================================
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public UUID getId() {
+        return id;
+    }
 
-    public UUID getJobOfferId() { return jobOfferId; }
-    public void setJobOfferId(UUID jobOfferId) { this.jobOfferId = jobOfferId; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 
-    public UUID getApplicantId() { return applicantId; }
-    public void setApplicantId(UUID applicantId) { this.applicantId = applicantId; }
+    public UUID getJobOfferId() {
+        return jobOfferId;
+    }
 
-    public String getCvUrl() { return cvUrl; }
-    public void setCvUrl(String cvUrl) { this.cvUrl = cvUrl; }
+    public void setJobOfferId(UUID jobOfferId) {
+        this.jobOfferId = jobOfferId;
+    }
 
-    public LocalDateTime getSubmittedAt() { return submittedAt; }
-    public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
+    public UUID getApplicantId() {
+        return applicantId;
+    }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public void setApplicantId(UUID applicantId) {
+        this.applicantId = applicantId;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getCvUrl() {
+        return cvUrl;
+    }
 
-    public ApplicationStatus getStatus() { return status; }
-    public void setStatus(ApplicationStatus status) { this.status = status; }
+    public void setCvUrl(String cvUrl) {
+        this.cvUrl = cvUrl;
+    }
 
-    public Double getMatchScore() { return matchScore; }
-    public void setMatchScore(Double matchScore) { this.matchScore = matchScore; }
+    public LocalDateTime getSubmittedAt() {
+        return submittedAt;
+    }
 
+    public void setSubmittedAt(LocalDateTime submittedAt) {
+        this.submittedAt = submittedAt;
+    }
 
-    public JobOffer getJobOffer() { return jobOffer; }
-    public void setJobOffer(JobOffer jobOffer) { this.jobOffer = jobOffer; }
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
 
-    public Applicant getApplicant() { return applicant; }
-    public void setApplicant(Applicant applicant) { this.applicant = applicant; }
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public ApplicationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ApplicationStatus status) {
+        this.status = status;
+    }
+
+    public Double getMatchScore() {
+        return matchScore;
+    }
+
+    public void setMatchScore(Double matchScore) {
+        this.matchScore = matchScore;
+    }
+
+    public JobOffer getJobOffer() {
+        return jobOffer;
+    }
+
+    public void setJobOffer(JobOffer jobOffer) {
+        this.jobOffer = jobOffer;
+    }
+
+    public Applicant getApplicant() {
+        return applicant;
+    }
+
+    public void setApplicant(Applicant applicant) {
+        this.applicant = applicant;
+    }
 
     // ======================================================
     // MÉTHODES UTILITAIRES
