@@ -98,8 +98,9 @@
 
                             <h:column>
                                 <f:facet name="header">Tags</f:facet>
-                                <!-- r['tags'] is a List, we just render its toString() -->
-                                #{r['tags']}
+                                <ui:repeat value="#{r['tags']}" var="tag">
+                                    <span class="tag-bubble">#{tag}</span>
+                                </ui:repeat>
                             </h:column>
 
                             <h:column>
