@@ -6,10 +6,11 @@ import ch.unil.doplab.JobOffer;
 import ch.unil.doplab.client.JobFinderClient; // NEW IMPORT
 // import ch.unil.doplab.service.domain.ApplicationState; // COMMENTED OUT
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Collections;
@@ -18,8 +19,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Named("jobOfferBean")
-@RequestScoped
-public class JobOfferBean {
+@SessionScoped
+public class JobOfferBean implements Serializable {
 
     // @Inject
     // private ApplicationState appState; // COMMENTED OUT: We stop direct access
@@ -124,6 +125,11 @@ public class JobOfferBean {
             externalJobs = Collections.emptyList();
         }
     }
+    
+    // Called by AJAX on each keyup in search field
+    public void onSearch(jakarta.faces.event.AjaxBehaviorEvent event) {
+        loadExternalJobs();
+    }
 
     // call this from init() or from your existing refresh method
     @PostConstruct
@@ -133,12 +139,43 @@ public class JobOfferBean {
         loadExternalJobs();
     }
 
-    // getter
+    // getter - returns filtered external jobs based on search keyword
     public List<Map<String, Object>> getExternalJobs() {
         if (externalJobs == null) {
             externalJobs = Collections.emptyList();
         }
-        return externalJobs;
+        
+        // If no search keyword, return all
+        if (searchKeyword == null || searchKeyword.trim().isEmpty()) {
+            return externalJobs;
+        }
+        
+        // Filter external jobs by keyword (title, company, tags)
+        String kw = searchKeyword.toLowerCase().trim();
+        List<Map<String, Object>> filtered = new ArrayList<>();
+        
+        for (Map<String, Object> job : externalJobs) {
+            String title = job.get("title") != null ? job.get("title").toString().toLowerCase() : "";
+            String company = job.get("company") != null ? job.get("company").toString().toLowerCase() : "";
+            
+            // Check tags
+            boolean tagMatch = false;
+            Object tagsObj = job.get("tags");
+            if (tagsObj instanceof List) {
+                for (Object tag : (List<?>) tagsObj) {
+                    if (tag != null && tag.toString().toLowerCase().contains(kw)) {
+                        tagMatch = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (title.contains(kw) || company.contains(kw) || tagMatch) {
+                filtered.add(job);
+            }
+        }
+        
+        return filtered;
     }
 
 

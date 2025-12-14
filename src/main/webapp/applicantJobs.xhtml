@@ -24,16 +24,23 @@
         <div class="card">
             <h:form>
 
-                <!-- keyword search -->
+                <!-- keyword search with live filtering -->
                 <div class="field">
                     <span class="field-label">Search</span>
                     <h:inputText value="#{jobOfferBean.searchKeyword}"
                                  styleClass="input-full"
-                                 placeholder="Search by title, company or description" />
+                                 placeholder="Search by title, company or description"
+                                 id="searchInput">
+                        <f:ajax event="keyup" 
+                                execute="@this" 
+                                render="onSiteJobsPanel remoteJobsPanel"
+                                listener="#{jobOfferBean.onSearch}" />
+                    </h:inputText>
                 </div>
 
                 <!-- On-site jobs -->
                 <h3 style="margin-top:16px; margin-bottom:12px;">On-site jobs</h3>
+                <h:panelGroup id="onSiteJobsPanel">
                 <div class="job-list-scroll">
                     <h:dataTable value="#{jobOfferBean.filteredOffers}"
                                  var="offer"
@@ -113,21 +120,21 @@
 
 
                     </h:dataTable>
-                    <h:form>
+                </div>
+                </h:panelGroup>
 
-                        <!-- existing search + internal offers table here -->
+                <!-- ===================== -->
+                <!-- Remote external jobs -->
+                <!-- ===================== -->
+                <h:panelGroup id="remoteJobsPanel">
+                    <h3 style="margin-top:32px;">Remote jobs</h3>
+                    <p class="page-subtitle">
+                        External remote jobs matching your search.
+                    </p>
 
-                        <!-- ===================== -->
-                        <!-- Remote external jobs -->
-                        <!-- ===================== -->
-                        <h3 style="margin-top:32px;">Remote jobs</h3>
-                        <p class="page-subtitle">
-                            External remote jobs matching your search.
-                        </p>
-
-                        <h:dataTable value="#{jobOfferBean.externalJobs}"
-                                     var="r"
-                                     styleClass="job-table">
+                    <h:dataTable value="#{jobOfferBean.externalJobs}"
+                                 var="r"
+                                 styleClass="job-table">
 
                             <h:column>
                                 <f:facet name="header">Title</f:facet>
@@ -160,11 +167,8 @@
                                 </h:outputLink>
                             </h:column>
 
-                        </h:dataTable>
-
-                    </h:form>
-
-                </div>
+                    </h:dataTable>
+                </h:panelGroup>
 
             </h:form>
         </div>

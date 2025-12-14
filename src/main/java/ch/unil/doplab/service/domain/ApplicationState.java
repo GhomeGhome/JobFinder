@@ -1815,6 +1815,11 @@ public class ApplicationState {
             managed.setLastName(incoming.getLastName());
         if (incoming.getEmail() != null && !incoming.getEmail().isBlank())
             managed.setEmail(incoming.getEmail());
+        
+        // Update password if provided
+        if (incoming.getPassword() != null && !incoming.getPassword().isBlank()) {
+            managed.setPassword(incoming.getPassword());
+        }
 
         if (incoming.getPhotoUrl() != null && !incoming.getPhotoUrl().isBlank())
             managed.setPhotoUrl(incoming.getPhotoUrl());
