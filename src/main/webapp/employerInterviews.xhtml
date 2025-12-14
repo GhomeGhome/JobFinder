@@ -113,27 +113,37 @@
 
                 <h:column>
                     <f:facet name="header">Mode</f:facet>
-                    #{iv.mode}
+                    <span class="status-badge">#{iv.mode}</span>
                 </h:column>
 
                 <h:column>
                     <f:facet name="header">Status</f:facet>
-                    <span class="status-badge">
-                        #{iv.status}
-                    </span>
+                    <h:panelGroup rendered="#{iv.status eq 'SCHEDULED'}">
+                        <span class="status-badge" style="background-color:#dcfce7; color:#15803d;">Scheduled</span>
+                    </h:panelGroup>
+                    <h:panelGroup rendered="#{iv.status eq 'CANCELED'}">
+                        <span class="status-badge" style="background-color:#fee2e2; color:#b91c1c;">Canceled</span>
+                    </h:panelGroup>
+                    <h:panelGroup rendered="#{iv.status eq 'COMPLETED'}">
+                        <span class="status-badge" style="background-color:#e5e7eb; color:#374151;">Completed</span>
+                    </h:panelGroup>
+                    <h:panelGroup rendered="#{iv.status ne 'SCHEDULED' and iv.status ne 'CANCELED' and iv.status ne 'COMPLETED'}">
+                        <span class="status-badge">#{iv.status}</span>
+                    </h:panelGroup>
                 </h:column>
 
                 <h:column>
                     <f:facet name="header">Actions</f:facet>
                     <h:form>
-                        <h:commandLink value="View"
-                                       action="#{interviewBean.view(iv.id)}" />
-                        |
-                        <h:commandLink value="Reschedule"
-                                       action="#{interviewBean.reschedule(iv.id)}" />
-                        |
-                        <h:commandLink value="Cancel"
-                                       action="#{interviewBean.cancel(iv.id)}" />
+                        <div style="display: flex; gap: 8px;">
+                            <h:commandLink value="Reschedule"
+                                           action="#{interviewBean.reschedule(iv.id)}"
+                                           styleClass="btn btn-light btn-sm" />
+                            <h:commandLink value="Cancel"
+                                           action="#{interviewBean.cancel(iv.id)}"
+                                           styleClass="btn btn-light btn-sm"
+                                           style="background-color:#fee2e2; color:#b91c1c;" />
+                        </div>
                     </h:form>
                 </h:column>
 

@@ -20,12 +20,17 @@ public class CompanyBean implements java.io.Serializable {
     private LoginBean loginBean;
     @Inject
     private JobFinderClient client; // NEW
-    
+
     private String searchQuery = "";
-    
-    public String getSearchQuery() { return searchQuery; }
-    public void setSearchQuery(String searchQuery) { this.searchQuery = searchQuery; }
-    
+
+    public String getSearchQuery() {
+        return searchQuery;
+    }
+
+    public void setSearchQuery(String searchQuery) {
+        this.searchQuery = searchQuery;
+    }
+
     public List<Company> getSearchResults() {
         return searchByName(searchQuery);
     }
@@ -35,7 +40,8 @@ public class CompanyBean implements java.io.Serializable {
     }
 
     public List<Company> getCompaniesForLoggedEmployer() {
-        if (loginBean.getLoggedEmployer() == null) return java.util.Collections.emptyList();
+        if (loginBean.getLoggedEmployer() == null)
+            return java.util.Collections.emptyList();
         java.util.UUID empId = loginBean.getLoggedEmployer().getId();
         java.util.UUID worksAt = loginBean.getLoggedEmployer().getCompanyId();
 
@@ -46,7 +52,8 @@ public class CompanyBean implements java.io.Serializable {
 
     // simple search by name (contains, case-insensitive)
     public List<Company> searchByName(String query) {
-        if (query == null || query.isBlank()) return java.util.Collections.emptyList();
+        if (query == null || query.isBlank())
+            return java.util.Collections.emptyList();
         String q = query.toLowerCase();
         return client.getAllCompanies().stream()
                 .filter(c -> c.getName() != null && c.getName().toLowerCase().contains(q))
@@ -54,18 +61,24 @@ public class CompanyBean implements java.io.Serializable {
     }
 
     public boolean linkEmployerToCompany(java.util.UUID companyId) {
-        if (loginBean.getLoggedEmployer() == null || companyId == null) return false;
+        if (loginBean.getLoggedEmployer() == null || companyId == null)
+            return false;
         var emp = loginBean.getLoggedEmployer();
         emp.setCompanyId(companyId);
         boolean ok = client.updateEmployer(emp);
         if (ok) {
-            // refresh session company
-            loginBean.setLoggedEmployer(emp);
+            // Also set company's ownerEmployerId so it appears in job post dropdown
             var company = client.getCompany(companyId);
-            if (company != null) loginBean.setLoggedCompany(company);
+            if (company != null) {
+                company.setOwnerEmployerId(emp.getId());
+                client.updateCompany(company);
+                loginBean.setLoggedCompany(company);
+            }
+            loginBean.setLoggedEmployer(emp);
         }
         return ok;
     }
+
     /**
      * NEW: Returns companies the applicant has applied to.
      */
@@ -76,7 +89,8 @@ public class CompanyBean implements java.io.Serializable {
         }
 
         // 1. Get current applicant ID
-        if (loginBean.getLoggedApplicant() == null) return java.util.Collections.emptyList();
+        if (loginBean.getLoggedApplicant() == null)
+            return java.util.Collections.emptyList();
         java.util.UUID myId = loginBean.getLoggedApplicant().getId();
 
         // 2. Get all my applications

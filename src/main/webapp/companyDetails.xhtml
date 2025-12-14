@@ -8,7 +8,7 @@
     <ui:define name="title">Company – JobFinder</ui:define>
 
     <f:metadata>
-        <f:viewParam name="companyId" value="#{companyViewBean.companyId}" />
+        <f:viewParam name="id" value="#{companyViewBean.companyId}" />
         <f:viewAction action="#{companyViewBean.init}" />
     </f:metadata>
 
@@ -16,7 +16,8 @@
         <h:panelGroup rendered="#{empty companyViewBean.company}">
             <div class="card">
                 <p>Company not found.</p>
-                <h:link outcome="/applicantCompanies.xhtml" value="← Back" styleClass="btn btn-light" />
+                <h:link outcome="#{loginBean.isEmployer() ? '/employerDashBoard.xhtml' : '/applicantCompanies.xhtml'}" 
+                        value="← Back" styleClass="btn btn-light" style="text-decoration:none;" />
             </div>
         </h:panelGroup>
 

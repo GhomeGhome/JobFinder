@@ -37,12 +37,22 @@
 
                         <h:column>
                             <f:facet name="header">Job Title</f:facet>
-                            <strong>#{applicantBean.getJobTitle(app.jobOfferId)}</strong>
+                            <h:link outcome="/applicantJobDetails.xhtml" style="font-weight:600; color:#1e293b; text-decoration:none;">
+                                #{applicantBean.getJobTitle(app.jobOfferId)}
+                                <f:param name="jobId" value="#{app.jobOfferId}" />
+                            </h:link>
                         </h:column>
 
                         <h:column>
                             <f:facet name="header">Company</f:facet>
-                            #{applicantBean.getCompanyName(app.jobOfferId)}
+                            <h:link outcome="/companyDetails.xhtml" 
+                                    style="display: inline-block; padding: 4px 10px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 6px; font-size: 12px; color: #475569; font-weight: 500; border: 1px solid #e2e8f0; text-decoration: none;"
+                                    rendered="#{applicantBean.getCompanyId(app.jobOfferId) != null}">
+                                🏢 #{applicantBean.getCompanyName(app.jobOfferId)}
+                                <f:param name="id" value="#{applicantBean.getCompanyId(app.jobOfferId)}" />
+                            </h:link>
+                            <h:outputText value="#{applicantBean.getCompanyName(app.jobOfferId)}" 
+                                          rendered="#{applicantBean.getCompanyId(app.jobOfferId) == null}" />
                         </h:column>
 
                         <h:column>

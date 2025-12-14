@@ -38,21 +38,41 @@
                 <h3>Description</h3>
                 <p>#{applicationViewBean.offer.description}</p>
 
+                <!-- Required Skills -->
+                <h:panelGroup rendered="#{not empty applicationViewBean.offer.requiredSkills}">
+                    <h3 style="margin-top: 24px;">Required Skills</h3>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <ui:repeat value="#{applicationViewBean.offer.requiredSkills}" var="skill">
+                            <span class="status-badge" style="background-color:#e0f2fe; color:#0284c7;">#{skill}</span>
+                        </ui:repeat>
+                    </div>
+                </h:panelGroup>
+
+                <!-- Required Qualifications -->
+                <h:panelGroup rendered="#{not empty applicationViewBean.offer.requiredQualifications}">
+                    <h3 style="margin-top: 24px;">Required Qualifications</h3>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <ui:repeat value="#{applicationViewBean.offer.requiredQualifications}" var="qual">
+                            <span class="status-badge" style="background-color:#fef3c7; color:#b45309;">#{qual}</span>
+                        </ui:repeat>
+                    </div>
+                </h:panelGroup>
+
                 <h3 style="margin-top: 24px;">Status</h3>
                 <!-- Status badges -->
                 <h:panelGroup rendered="#{applicationViewBean.offer.status eq 'Published'}">
-                    <span style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;">
-                        ● Open for Applications
+                    <span class="status-badge" style="background-color:#dcfce7; color:#15803d;">
+                        Open for Applications
                     </span>
                 </h:panelGroup>
                 <h:panelGroup rendered="#{applicationViewBean.offer.status eq 'Draft'}">
-                    <span style="background: #f3f4f6; color: #6b7280; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;">
-                        ○ Draft - Not accepting applications
+                    <span class="status-badge" style="background-color:#e5e7eb; color:#374151;">
+                        Draft
                     </span>
                 </h:panelGroup>
                 <h:panelGroup rendered="#{applicationViewBean.offer.status eq 'Closed'}">
-                    <span style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;">
-                        ✗ Closed - No longer accepting applications
+                    <span class="status-badge" style="background-color:#fee2e2; color:#b91c1c;">
+                        Closed
                     </span>
                 </h:panelGroup>
 

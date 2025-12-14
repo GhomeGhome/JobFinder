@@ -28,8 +28,8 @@
 
                     <h:column>
                         <f:facet name="header">Name</f:facet>
-                        <h:link value="#{c.name}" outcome="/companyDetails.xhtml" style="font-weight:bold; color:#2563eb;">
-                            <f:param name="companyId" value="#{c.id}" />
+                        <h:link value="#{c.name}" outcome="/companyDetails.xhtml" style="font-weight:bold; color:#2563eb; text-decoration:none;">
+                            <f:param name="id" value="#{c.id}" />
                         </h:link>
                     </h:column>
 

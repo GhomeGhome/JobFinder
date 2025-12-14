@@ -86,6 +86,16 @@ public class ApplicantBean implements Serializable {
         return (comp != null) ? comp.getName() : "Unknown Company";
     }
 
+    /**
+     * Helper to get Company ID for a job offer (for linking)
+     */
+    public UUID getCompanyId(UUID jobId) {
+        if (jobId == null)
+            return null;
+        JobOffer job = client.getJobOffer(jobId);
+        return (job != null) ? job.getCompanyId() : null;
+    }
+
     public String updateStatus(ch.unil.doplab.Application app) {
         if (app != null) {
             // 1. Send the update to the server

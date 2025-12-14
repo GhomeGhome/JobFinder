@@ -50,14 +50,14 @@
                             <!-- Link to company details if job has a company -->
                             <h:link outcome="/companyDetails.xhtml"
                                     rendered="#{offer.companyId != null}"
-                                    style="display: inline-block; padding: 6px 12px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 8px; font-size: 13px; color: #1e293b; font-weight: 600; border: 1px solid #e2e8f0; text-decoration: none;">
+                                    style="display: inline-block; padding: 4px 10px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 6px; font-size: 12px; color: #475569; font-weight: 500; border: 1px solid #e2e8f0; text-decoration: none;">
                                 🏢 #{jobOfferBean.companyName(offer)}
-                                <f:param name="companyId" value="#{offer.companyId}" />
+                                <f:param name="id" value="#{offer.companyId}" />
                             </h:link>
                             <!-- Fallback to employer profile if no company -->
                             <h:link outcome="/employerProfileView.xhtml"
                                     rendered="#{offer.companyId == null}"
-                                    style="display: inline-block; padding: 6px 12px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 8px; font-size: 13px; color: #1e293b; font-weight: 600; border: 1px solid #e2e8f0; text-decoration: none;">
+                                    style="display: inline-block; padding: 4px 10px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 6px; font-size: 12px; color: #475569; font-weight: 500; border: 1px solid #e2e8f0; text-decoration: none;">
                                 👤 #{jobOfferBean.companyName(offer)}
                                 <f:param name="id" value="#{offer.employerId}" />
                             </h:link>
@@ -66,18 +66,18 @@
                         <h:column>
                             <f:facet name="header">Status</f:facet>
                             <h:panelGroup rendered="#{offer.status eq 'Published'}">
-                                <span style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                                    ● Open
+                                <span class="status-badge" style="background-color:#dcfce7; color:#15803d;">
+                                    Open
                                 </span>
                             </h:panelGroup>
                             <h:panelGroup rendered="#{offer.status eq 'Draft'}">
-                                <span style="background: #f3f4f6; color: #6b7280; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                                    ○ Draft
+                                <span class="status-badge" style="background-color:#e5e7eb; color:#374151;">
+                                    Draft
                                 </span>
                             </h:panelGroup>
                             <h:panelGroup rendered="#{offer.status eq 'Closed'}">
-                                <span style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                                    ✗ Closed
+                                <span class="status-badge" style="background-color:#fee2e2; color:#b91c1c;">
+                                    Closed
                                 </span>
                             </h:panelGroup>
                         </h:column>
@@ -87,22 +87,25 @@
                             <!-- Published: Can apply -->
                             <h:link outcome="/applicantJobDetails.xhtml"
                                     rendered="#{offer.status eq 'Published'}"
-                                    style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);">
-                                ✉️ Apply Now
+                                    styleClass="btn btn-primary btn-sm"
+                                    style="text-decoration: none; background-color:#22c55e;">
+                                Apply Now
                                 <f:param name="jobId" value="#{offer.id}" />
                             </h:link>
                             <!-- Draft: View only -->
                             <h:link outcome="/applicantJobDetails.xhtml"
                                     rendered="#{offer.status eq 'Draft'}"
-                                    style="display: inline-flex; align-items: center; gap: 6px; background: #e5e7eb; color: #6b7280; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">
-                                👁️ Preview
+                                    styleClass="btn btn-light btn-sm"
+                                    style="text-decoration: none;">
+                                Preview
                                 <f:param name="jobId" value="#{offer.id}" />
                             </h:link>
                             <!-- Closed: View only, greyed out -->
                             <h:link outcome="/applicantJobDetails.xhtml"
                                     rendered="#{offer.status eq 'Closed'}"
-                                    style="display: inline-flex; align-items: center; gap: 6px; background: #fee2e2; color: #991b1b; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">
-                                🚫 Closed
+                                    styleClass="btn btn-light btn-sm"
+                                    style="text-decoration: none; background-color:#fee2e2; color:#b91c1c;">
+                                Closed
                                 <f:param name="jobId" value="#{offer.id}" />
                             </h:link>
                         </h:column>

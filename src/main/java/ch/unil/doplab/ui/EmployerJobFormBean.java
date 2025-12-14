@@ -29,22 +29,22 @@ public class EmployerJobFormBean implements Serializable {
 
     private JobOffer jobOffer = new JobOffer();
     private List<Company> availableCompanies;
-    private String selectedCompanyId;   // binds to <selectOneMenu>
+    private String selectedCompanyId; // binds to <selectOneMenu>
     private String statusString = "Draft"; // default
-    private String requiredSkillInput;  // chip input for required skills
+    private String requiredSkillInput; // chip input for required skills
 
     @PostConstruct
     public void init() {
         resetForm();
     }
-    
+
     public void resetForm() {
         // Reset form fields for a new job
         jobOffer = new JobOffer();
         selectedCompanyId = null;
         statusString = "Draft";
         requiredSkillInput = null;
-        
+
         // Ensure we are logged as employer
         if (!loginBean.isEmployer() || loginBean.getLoggedEmployer() == null) {
             return;
@@ -53,10 +53,12 @@ public class EmployerJobFormBean implements Serializable {
         Employer emp = loginBean.getLoggedEmployer();
         UUID empId = emp.getId();
 
-        // Load only companies owned by this employer
+        // Load companies owned by OR linked to this employer
         List<Company> all = client.getAllCompanies();
+        UUID worksAt = emp.getCompanyId();
         availableCompanies = all.stream()
-                .filter(c -> empId.equals(c.getOwnerEmployerId()))
+                .filter(c -> empId.equals(c.getOwnerEmployerId())
+                        || (worksAt != null && worksAt.equals(c.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -121,7 +123,8 @@ public class EmployerJobFormBean implements Serializable {
         java.util.LinkedHashSet<String> toAdd = new java.util.LinkedHashSet<>();
         for (String s : requiredSkillInput.split(",")) {
             String t = s == null ? "" : s.trim();
-            if (!t.isBlank()) toAdd.add(t);
+            if (!t.isBlank())
+                toAdd.add(t);
         }
         for (String s : toAdd) {
             if (!jobOffer.getRequiredSkills().contains(s)) {
@@ -132,8 +135,10 @@ public class EmployerJobFormBean implements Serializable {
     }
 
     public void removeRequiredSkill(String skill) {
-        if (skill == null) return;
-        if (jobOffer.getRequiredSkills() == null) return;
+        if (skill == null)
+            return;
+        if (jobOffer.getRequiredSkills() == null)
+            return;
         jobOffer.getRequiredSkills().removeIf(s -> skill.equalsIgnoreCase(s));
     }
 

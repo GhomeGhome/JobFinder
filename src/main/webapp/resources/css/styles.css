@@ -132,6 +132,7 @@ body.page-bg {
 /* ========== BUTTONS ========== */
 
 .btn {
+    text-decoration: none;
     border-radius: 999px;
     border: none;
     cursor: pointer;
@@ -156,6 +157,18 @@ body.page-bg {
 .btn-light {
     background: #e5e7eb;
     color: #111827;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.input-sm {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    font-size: 13px;
 }
 
 .btn-light:hover {

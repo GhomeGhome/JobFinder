@@ -18,28 +18,30 @@
             <p class="page-subtitle">
                 Manage the job offers you have published.
             </p>
-            <div style="margin-top:16px;">
-                <h:link outcome="/employerJobNew.xhtml"
-                        value="+ New job post"
-                        styleClass="btn btn-primary" />
-            </div>
         </div>
         <div class="card">
             <h:form>
 
-                <!-- Status filter -->
-                <div class="field" style="max-width: 260px;">
-                    <span class="field-label">Filter by status</span>
-                    <h:selectOneMenu value="#{jobOfferBean.statusFilter}"
-                                     styleClass="input-full">
-                        <f:selectItem itemValue="" itemLabel="All statuses" />
-                        <f:selectItem itemValue="Draft" itemLabel="Draft" />
-                        <f:selectItem itemValue="Published" itemLabel="Published" />
-                        <f:selectItem itemValue="Closed" itemLabel="Closed" />
-                    </h:selectOneMenu>
+                <!-- Filter row with + New job post button on the right -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px;">
+                    <div style="display: flex; gap: 12px; align-items: flex-end;">
+                        <div class="field" style="max-width: 260px; margin-bottom: 0;">
+                            <span class="field-label">Filter by status</span>
+                            <h:selectOneMenu value="#{jobOfferBean.statusFilter}"
+                                             styleClass="input-full">
+                                <f:selectItem itemValue="" itemLabel="All statuses" />
+                                <f:selectItem itemValue="Draft" itemLabel="Draft" />
+                                <f:selectItem itemValue="Published" itemLabel="Published" />
+                                <f:selectItem itemValue="Closed" itemLabel="Closed" />
+                            </h:selectOneMenu>
+                        </div>
+                        <h:commandButton value="Apply" styleClass="btn btn-light" />
+                    </div>
+                    <h:link outcome="/employerJobNew.xhtml"
+                            value="+ New job post"
+                            styleClass="btn btn-primary"
+                            style="text-decoration:none;" />
                 </div>
-
-                <h:commandButton value="Apply" styleClass="btn btn-light" />
 
                 <div class="scroll-container">
                     <!-- Job posts table -->
@@ -56,26 +58,28 @@
 
                         <h:column>
                             <f:facet name="header">Company</f:facet>
-                            <span style="display: inline-block; padding: 4px 10px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 6px; font-size: 12px; color: #475569; font-weight: 500; border: 1px solid #e2e8f0;">
+                            <h:link outcome="companyDetails.xhtml"
+                                    style="display: inline-block; padding: 4px 10px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 6px; font-size: 12px; color: #475569; font-weight: 500; border: 1px solid #e2e8f0; text-decoration: none;">
                                 🏢 #{jobOfferBean.companyName(offer)}
-                            </span>
+                                <f:param name="id" value="#{offer.companyId}" />
+                            </h:link>
                         </h:column>
 
                         <h:column>
                             <f:facet name="header">Status</f:facet>
                             <h:panelGroup rendered="#{offer.status eq 'Published'}">
-                                <span style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                                    ● Published
+                                <span class="status-badge" style="background-color:#dcfce7; color:#15803d;">
+                                    Published
                                 </span>
                             </h:panelGroup>
                             <h:panelGroup rendered="#{offer.status eq 'Draft'}">
-                                <span style="background: #f3f4f6; color: #6b7280; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                                    ○ Draft
+                                <span class="status-badge" style="background-color:#e5e7eb; color:#374151;">
+                                    Draft
                                 </span>
                             </h:panelGroup>
                             <h:panelGroup rendered="#{offer.status eq 'Closed'}">
-                                <span style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                                    ✗ Closed
+                                <span class="status-badge" style="background-color:#fee2e2; color:#b91c1c;">
+                                    Closed
                                 </span>
                             </h:panelGroup>
                         </h:column>
@@ -84,9 +88,10 @@
                         <h:column>
                             <f:facet name="header">Actions</f:facet>
 
-                            <h:commandLink value="👥 View applicants"
+                            <h:commandLink value="View applicants"
                                            action="#{applicationBean.openApplicationsForJob(offer.id)}"
-                                           style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35); border: none; cursor: pointer;" />
+                                           styleClass="btn btn-primary btn-sm"
+                                           style="text-decoration:none;" />
                         </h:column>
 
                     </h:dataTable>
