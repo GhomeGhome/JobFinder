@@ -40,31 +40,38 @@ public class SkillSuggestBean implements Serializable {
     }
 
     public void addSkill(Map<String, Object> skill) {
-        if (skill == null) return;
+        if (skill == null)
+            return;
 
         Object rawLabel = skill.get("label");
-        if (rawLabel == null) return;
+        if (rawLabel == null)
+            return;
 
         String label = rawLabel.toString().trim();
-        if (label.isBlank()) return;
+        if (label.isBlank())
+            return;
 
         // 1) Update UI list
         boolean already = selectedSkills.stream()
                 .anyMatch(s -> label.equalsIgnoreCase(String.valueOf(s.get("label"))));
-        if (!already) selectedSkills.add(skill);
+        if (!already)
+            selectedSkills.add(skill);
 
         // 2) Persist into Applicant.skillsAsString
         persistSkillsToApplicantAndRecompute();
     }
 
     public void removeSkill(Map<String, Object> skill) {
-        if (skill == null) return;
+        if (skill == null)
+            return;
 
         Object rawLabel = skill.get("label");
-        if (rawLabel == null) return;
+        if (rawLabel == null)
+            return;
 
         String label = rawLabel.toString().trim();
-        if (label.isBlank()) return;
+        if (label.isBlank())
+            return;
 
         selectedSkills.removeIf(s -> label.equalsIgnoreCase(String.valueOf(s.get("label"))));
 
@@ -73,7 +80,8 @@ public class SkillSuggestBean implements Serializable {
 
     private void persistSkillsToApplicantAndRecompute() {
         Applicant a = loginBean.getLoggedApplicant();
-        if (a == null || a.getId() == null) return;
+        if (a == null || a.getId() == null)
+            return;
 
         // keep only unique labels
         LinkedHashSet<String> labels = new LinkedHashSet<>();
@@ -81,14 +89,19 @@ public class SkillSuggestBean implements Serializable {
             Object l = s.get("label");
             if (l != null) {
                 String val = String.valueOf(l).trim();
-                if (!val.isBlank()) labels.add(val);
+                if (!val.isBlank())
+                    labels.add(val);
             }
         }
 
-        a.setSkillsAsString(String.join(", ", labels));
+        // Use setSkills() directly to replace the entire list (supports removal)
+        List<String> newSkills = new ArrayList<>(labels);
+        System.out.println(">>> SKILL UPDATE: Setting skills to: " + newSkills);
+        a.setSkills(newSkills);
 
         // IMPORTANT: persist applicant first
         boolean ok = client.updateApplicant(a);
+        System.out.println(">>> SKILL UPDATE: updateApplicant returned: " + ok);
         if (ok) {
             // refresh session copy so subsequent renders show saved skills immediately
             ch.unil.doplab.Applicant fresh = client.getApplicant(a.getId());
@@ -102,12 +115,14 @@ public class SkillSuggestBean implements Serializable {
     // Optional: when opening profile page, load selectedSkills from skillsAsString
     public void syncFromApplicant() {
         Applicant a = loginBean.getLoggedApplicant();
-        if (a == null) return;
+        if (a == null)
+            return;
 
         selectedSkills.clear();
 
         String skills = a.getSkillsAsString();
-        if (skills == null || skills.isBlank()) return;
+        if (skills == null || skills.isBlank())
+            return;
 
         for (String x : skills.split(",")) {
             String label = x.trim();
@@ -118,8 +133,19 @@ public class SkillSuggestBean implements Serializable {
     }
 
     // getters / setters
-    public String getQuery() { return query; }
-    public void setQuery(String query) { this.query = query; }
-    public List<Map<String, Object>> getSuggestions() { return suggestions; }
-    public List<Map<String, Object>> getSelectedSkills() { return selectedSkills; }
+    public String getQuery() {
+        return query;
+    }
+
+    public void setQuery(String query) {
+        this.query = query;
+    }
+
+    public List<Map<String, Object>> getSuggestions() {
+        return suggestions;
+    }
+
+    public List<Map<String, Object>> getSelectedSkills() {
+        return selectedSkills;
+    }
 }
